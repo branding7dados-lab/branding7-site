@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic';
 import { carregar, CFG_PADRAO, SERVICOS_PADRAO, linkWpp, tipoLink, embed, enviarLead, origemDaVisita, evento, registrar } from '@/lib/dados';
 
 /* a câmera 3D chega só no navegador e só quando a página já abriu */
-const Camera3D = dynamic(() => import('./Camera3D'), { ssr: false });
+const Celular3D = dynamic(() => import('./Celular3D'), { ssr: false });
 
 const Seta = () => (<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>);
 const Zap = () => (<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.2a9.7 9.7 0 0 0-8.4 14.6L2.3 21.6l4.9-1.3A9.8 9.8 0 1 0 12 2.2zm4.4 11.8c-.2-.1-1.4-.7-1.7-.8-.2-.1-.4-.1-.5.1l-.8.9c-.1.2-.3.2-.5.1a6.6 6.6 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.7-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 2s.8 2.3.9 2.5c.1.2 1.6 2.5 4 3.5 1.5.6 2 .7 2.8.6.4-.1 1.4-.6 1.6-1.1.2-.5.2-1 .1-1.1l-.4-.2z" /></svg>);
@@ -15,7 +15,7 @@ const Play = () => (<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="curr
 
 function Botao({ href, children, claro, onClick, alvo }) {
   return (
-    <a className={'pilula' + (claro ? ' clara' : '')} href={href} onClick={onClick} target={alvo ? '_blank' : undefined} rel={alvo ? 'noopener' : undefined}>
+    <a className={'pilula ima' + (claro ? ' clara' : '')} href={href} onClick={onClick} target={alvo ? '_blank' : undefined} rel={alvo ? 'noopener' : undefined}>
       <span>{children}</span><i><Seta /></i>
     </a>
   );
@@ -75,6 +75,14 @@ export default function Site() {
   const insta = 'https://www.instagram.com/' + String(cfg.instagram || 'b7.agencia').replace(/^@/, '') + '/';
   const regioes = (cfg.regioes || []).filter(Boolean);
   const numeros = (cfg.numeros || []).filter(n => n && n.valor);
+  /* tela do celular 3D: vídeos enviados (arquivo) e, depois, os clientes do site */
+  const midiasCelular = useMemo(() => {
+    const vids = itens.filter(i => (i.tipo === 'video' || i.tipo === 'depoimento') && tipoLink(i.video_url) === 'arquivo')
+      .map(i => ({ video: i.video_url, nome: i.cliente_nome || i.titulo, arroba: i.cliente_arroba, titulo: i.titulo, logo: i.capa_url && i.tipo !== 'video' ? i.capa_url : null }));
+    const cli = itens.filter(i => i.tipo === 'cliente' && i.capa_url).map(i => ({ logo: i.capa_url, nome: i.cliente_nome || i.titulo }));
+    return vids.concat(cli).slice(0, 14);
+  }, [itens]);
+
   /* personalização feita no Sistema B7 → Site → Página (vazio = padrão) */
   const mostra = k => !(cfg.secoes && cfg.secoes[k] === false);
   const lista = (v, pad) => (Array.isArray(v) && v.filter(Boolean).length ? v.filter(Boolean) : pad);
@@ -91,9 +99,64 @@ export default function Site() {
     const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) setAtivo(e.target.id); }), { rootMargin: '-45% 0px -50% 0px' });
     ids.forEach(id => { const el = document.getElementById(id); if (el) io.observe(el); });
     const io2 = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visivel'); io2.unobserve(e.target); } }), { rootMargin: '0px 0px -10% 0px' });
-    document.querySelectorAll('.aparece:not(.visivel)').forEach(el => io2.observe(el));
+    document.querySelectorAll('.aparece:not(.visivel)').forEach(el => {
+      /* irmãos que aparecem juntos entram em cascata */
+      const irmaos = [...el.parentElement.children].filter(x => x.classList.contains('aparece'));
+      el.style.setProperty('--atraso', (Math.min(irmaos.indexOf(el), 6) * 90) + 'ms');
+      io2.observe(el);
+    });
     return () => { io.disconnect(); io2.disconnect(); };
   }, [itens]);
+
+  /* movimento ao rolar: um único laço que escreve variáveis CSS
+     --rol  progresso da página (barra no topo)   --vel  velocidade da rolagem
+     .heroi --hy (0 a 1 saindo)   .manifesto --mp   .projeto --sai (coberto pelo próximo) */
+  useEffect(() => {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const raiz = document.documentElement;
+    let raf = 0, yAnt = scrollY, vel = 0;
+    const passo = () => {
+      raf = 0;
+      const y = scrollY, alt = raiz.scrollHeight - innerHeight;
+      vel += ((y - yAnt) - vel) * .2; yAnt = y;
+      raiz.style.setProperty('--rol', (alt > 0 ? y / alt : 0).toFixed(4));
+      raiz.style.setProperty('--vel', Math.max(-1, Math.min(1, vel / 60)).toFixed(3));
+      const h = document.querySelector('.heroi');
+      if (h) { const r = h.getBoundingClientRect(); h.style.setProperty('--hy', Math.min(1, Math.max(0, -r.top / r.height)).toFixed(4)); }
+      const m = document.querySelector('.manifesto');
+      if (m) { const r = m.getBoundingClientRect(); m.style.setProperty('--mp', Math.min(1, Math.max(0, (innerHeight - r.top) / (innerHeight + r.height * .45))).toFixed(4)); }
+      document.querySelectorAll('.projeto').forEach(p => { const prox = p.nextElementSibling; if (!prox) { p.style.setProperty('--sai', 0); return; }
+        const rp = prox.getBoundingClientRect(); p.style.setProperty('--sai', Math.min(1, Math.max(0, 1 - rp.top / innerHeight)).toFixed(4)); });
+      if (Math.abs(vel) > .5) raf = requestAnimationFrame(passo); else raiz.style.setProperty('--vel', 0);
+    };
+    const pedir = () => { if (!raf) raf = requestAnimationFrame(passo); };
+    addEventListener('scroll', pedir, { passive: true }); addEventListener('resize', pedir); passo();
+
+    /* mouse: luz que segue o cursor nos cartões, inclinação e botões "ímã" */
+    const fino = matchMedia('(pointer: fine)').matches;
+    const mover = e => {
+      const alvo = e.target.closest && e.target.closest('.luz, .ima, .inclina'); if (!alvo) return;
+      const r = alvo.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+      alvo.style.setProperty('--mx', (x * 100).toFixed(1) + '%'); alvo.style.setProperty('--my', (y * 100).toFixed(1) + '%');
+      if (alvo.classList.contains('ima')) alvo.style.transform = `translate(${((x - .5) * 10).toFixed(1)}px, ${((y - .5) * 8).toFixed(1)}px)`;
+      if (alvo.classList.contains('inclina')) alvo.style.transform = `perspective(900px) rotateX(${((.5 - y) * 6).toFixed(2)}deg) rotateY(${((x - .5) * 8).toFixed(2)}deg)`;
+    };
+    const sair = e => { const a = e.target.closest && e.target.closest('.ima, .inclina'); if (a && !a.contains(e.relatedTarget)) a.style.transform = ''; };
+    if (fino) { document.addEventListener('pointermove', mover, { passive: true }); document.addEventListener('pointerout', sair, { passive: true }); }
+
+    /* números que contam ao aparecer */
+    const io = new IntersectionObserver(es => es.forEach(e => {
+      if (!e.isIntersecting) return; io.unobserve(e.target);
+      const el = e.target, txt = el.dataset.conta || '', mt = txt.match(/^(\D*)(\d+(?:[.,]\d+)?)(.*)$/); if (!mt) return;
+      const fim = parseFloat(mt[2].replace(',', '.')), dec = (mt[2].split(/[.,]/)[1] || '').length, t0 = performance.now();
+      const anda = agora => { const k = Math.min(1, (agora - t0) / 1600), v = fim * (1 - Math.pow(1 - k, 4));
+        el.textContent = mt[1] + v.toFixed(dec).replace('.', ',') + mt[3]; if (k < 1) requestAnimationFrame(anda); };
+      requestAnimationFrame(anda);
+    }), { threshold: .6 });
+    document.querySelectorAll('[data-conta]').forEach(el => io.observe(el));
+    return () => { removeEventListener('scroll', pedir); removeEventListener('resize', pedir); cancelAnimationFrame(raf); io.disconnect();
+      document.removeEventListener('pointermove', mover); document.removeEventListener('pointerout', sair); };
+  }, [itens, cfg]);
 
   /* processo: a rolagem dentro da seção vira --p (0 a 1) */
   useEffect(() => {
@@ -147,6 +210,7 @@ export default function Site() {
 
   return (
     <>
+      <div className="barra-rolagem" aria-hidden="true" />
       {/* ============ ABERTURA ============ */}
       <section className="heroi" id="inicio">
         <div className="heroi-fundo" aria-hidden="true">
@@ -179,11 +243,13 @@ export default function Site() {
         <div className="manifesto-luz" aria-hidden="true" />
         <img className="manifesto-simbolo" src="/marca/symbol-white.png" alt="" aria-hidden="true" width="199" height="236" />
         <div className="manifesto-tx aparece">
-          <h2>{manifesto.map((l, k) => k === manifesto.length - 1 ? <em key={k}>{l}</em> : <span key={k}>{l}<br /></span>)}</h2>
+          <h2 className="manifesto-h">{(() => { let n = 0; const total = manifesto.join(' ').split(/\s+/).length;
+            return manifesto.map((l, k) => <span key={k} className={'m-linha' + (k === manifesto.length - 1 ? ' fim' : '')}>{l.split(/\s+/).map((w, j) =>
+              <span key={j} className="m-pal" style={{ '--i': n++, '--n': total }}>{w} </span>)}</span>); })()}</h2>
         </div>
         {notas[0] && <p className="nota n1 aparece">{notas[0]}</p>}
         {notas[1] && <p className="nota n2 aparece">{notas[1]}</p>}
-        {numeros.length > 0 && <div className="manifesto-num">{numeros.map((n, k) => <div key={k} className="aparece"><b>{n.valor}</b><small>{n.rotulo}</small></div>)}</div>}
+        {numeros.length > 0 && <div className="manifesto-num">{numeros.map((n, k) => <div key={k} className="aparece"><b data-conta={n.valor}>{n.valor}</b><small>{n.rotulo}</small></div>)}</div>}
       </section>
 
       {/* ============ SOBRE (claro) ============ */}
@@ -241,7 +307,7 @@ export default function Site() {
           <div className="processo-ceu" aria-hidden="true" />
           <p className="rotulo centro">Processo de criação</p>
           <h2 className="processo-titulo" aria-label="Do roteiro ao resultado: seis passos">DO ROTEIRO<br />AO RESULTADO<br /><em>SEIS PASSOS</em></h2>
-          <div className="processo-centro"><Camera3D progresso={progressoProcesso} /></div>
+          <div className="processo-centro"><Celular3D progresso={progressoProcesso} midias={midiasCelular} /></div>
           <ol className="processo-passos">
             {PASSOS.map(([t, d], k) => (
               <li key={t} style={{ '--k': k }}><span>{String(k + 1).padStart(2, '0')}</span><b>{t}</b><p>{d}</p></li>
@@ -258,7 +324,7 @@ export default function Site() {
           <h2 className="aparece">Tudo que o seu vídeo precisa para <em>performar</em>.</h2>
           <div className="servicos-lista">
             {servicos.map((s, k) => (
-              <article className="servico aparece" key={s.id || k}>
+              <article className="servico aparece luz" key={s.id || k}>
                 <span className="servico-n">{/^\d+$/.test(String(s.icone || '')) ? s.icone : (s.icone || String(k + 1).padStart(2, '0'))}</span>
                 <h3>{s.titulo}</h3>
                 {s.texto && <p>{s.texto}</p>}
@@ -282,7 +348,7 @@ export default function Site() {
                   <span className="depo-quem"><b>{d.cliente_nome}</b>{d.cliente_arroba && <small>@{String(d.cliente_arroba).replace(/^@/, '')}</small>}</span>
                 </button>
               ) : (
-                <figure className="depo-tx aparece" key={d.id}>
+                <figure className="depo-tx aparece inclina luz" key={d.id}>
                   <blockquote>{d.texto}</blockquote>
                   <figcaption><span className="depo-av">{(d.cliente_nome || '?').charAt(0)}</span><span><b>{d.cliente_nome}</b><small>{d.cliente_arroba ? '@' + String(d.cliente_arroba).replace(/^@/, '') : d.titulo}</small></span></figcaption>
                 </figure>

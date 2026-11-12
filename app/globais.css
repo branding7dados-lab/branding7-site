@@ -25,8 +25,11 @@ em{font-style:normal;background:var(--grad-tx);-webkit-background-clip:text;back
 .lim{width:min(var(--lim),100% - 48px);margin:0 auto;}
 .rotulo{margin:0 0 18px;font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--tx-3);}
 .rotulo.centro{text-align:center;}
-.aparece{opacity:0;transform:translateY(28px);transition:opacity .8s ease, transform .9s cubic-bezier(.2,.8,.2,1);}
-.aparece.visivel{opacity:1;transform:none;}
+.aparece{opacity:0;transform:translateY(42px) scale(.98);filter:blur(8px);
+  transition:opacity .9s ease var(--atraso,0ms), transform 1.1s cubic-bezier(.16,1,.3,1) var(--atraso,0ms), filter .9s ease var(--atraso,0ms);}
+.aparece.visivel{opacity:1;transform:none;filter:none;}
+h2.aparece{clip-path:inset(0 0 100% 0);transform:translateY(60px);transition:opacity .9s ease var(--atraso,0ms), transform 1.2s cubic-bezier(.16,1,.3,1) var(--atraso,0ms), clip-path 1.2s cubic-bezier(.16,1,.3,1) var(--atraso,0ms), filter .9s ease;}
+h2.aparece.visivel{clip-path:inset(-20% -5% -20% -5%);}
 
 /* ---------- botões em pílula (seta num círculo) ---------- */
 .pilula{display:inline-flex;align-items:center;gap:14px;height:52px;padding:0 6px 0 22px;border-radius:99px;border:0;cursor:pointer;
@@ -131,10 +134,12 @@ em{font-style:normal;background:var(--grad-tx);-webkit-background-clip:text;back
 .processo .rotulo{position:absolute;top:calc(60px + env(safe-area-inset-top));left:0;right:0;}
 .processo-titulo{position:absolute;text-align:center;font-size:clamp(46px,9vw,140px);font-weight:600;letter-spacing:-.055em;line-height:.9;color:#ece8f5;
   opacity:calc(1 - var(--p) * 4);transform:scale(calc(1 + var(--p) * 1.6));filter:blur(calc(var(--p) * 20px));pointer-events:none;}
-.processo-centro{position:absolute;width:min(760px,96vw);aspect-ratio:16/10;display:grid;place-items:center;
+.processo-centro{position:absolute;width:min(620px,92vw);height:min(86vh,820px);display:grid;place-items:center;
   opacity:clamp(0,calc((var(--p) - .16) * 5),1);transform:scale(clamp(.7,calc(.7 + (var(--p) - .16) * 2.2),1));}
 .processo-centro::before{content:"";position:absolute;inset:18% 22%;border-radius:50%;background:radial-gradient(closest-side,rgba(226,64,156,.35),rgba(91,43,198,.18) 55%,transparent);filter:blur(30px);z-index:-1;}
-.camera3d{width:100%;height:100%;}
+.camera3d,.celular3d{width:100%;height:100%;}
+.celular3d canvas{width:100% !important;height:100% !important;display:block;}
+.celular3d.sem-3d{background:url('/marca/symbol-white.png') center/18% no-repeat;opacity:.8;}
 .camera3d canvas{width:100% !important;height:100% !important;display:block;}
 .camera3d.sem-3d{background:url('/marca/symbol-white.png') center/18% no-repeat;opacity:.8;}
 .processo-passos{position:absolute;inset:0;margin:0;padding:0;list-style:none;}
@@ -432,7 +437,7 @@ em{font-style:normal;background:var(--grad-tx);-webkit-background-clip:text;back
   .processo-palco{position:relative;height:auto;display:block;overflow:visible;padding:0 16px;}
   .processo .rotulo{position:static;margin-bottom:14px;}
   .processo-titulo{position:static;opacity:1;transform:none;filter:none;text-align:center;font-size:12.5vw;}
-  .processo-centro{position:relative;top:auto !important;left:auto !important;width:calc(100% + 32px) !important;margin:10px -16px 0;aspect-ratio:1/0.85;opacity:1;transform:none;}
+  .processo-centro{position:relative;top:auto !important;left:auto !important;width:calc(100% + 32px) !important;margin:10px -16px 0;height:auto;aspect-ratio:1/1.25;opacity:1;transform:none;}
   .processo-passos{position:relative;inset:auto;margin-top:6px;padding-left:28px;}
   .processo-passos::before{content:"";position:absolute;left:9px;top:10px;bottom:10px;width:2px;border-radius:2px;background:linear-gradient(180deg,#5B2BC6,#E2409C);}
   .processo-passos li{position:relative;left:auto !important;right:auto !important;top:auto !important;bottom:auto !important;width:auto !important;transform:none !important;opacity:1 !important;
@@ -449,6 +454,53 @@ em{font-style:normal;background:var(--grad-tx);-webkit-background-clip:text;back
   .contato{padding:80px 0 110px;}
   .contato-tx h2{font-size:12vw;}
 }
+/* ====================== MOVIMENTO (rolagem e mouse) ====================== */
+.barra-rolagem{position:fixed;top:0;left:0;right:0;height:3px;z-index:60;background:var(--grad);transform-origin:0 50%;transform:scaleX(var(--rol,0));pointer-events:none;}
+/* abertura: o fundo aproxima, o B7 desce e o texto sobe e some ao rolar */
+.heroi{--hy:0;}
+.heroi-fundo{transform:scale(calc(1 + var(--hy) * .18));transform-origin:50% 30%;}
+.marca-gigante{translate:0 calc(var(--hy) * 38%);scale:calc(1 + var(--hy) * .25);}
+.heroi-base{transform:translateY(calc(var(--hy) * -120px));opacity:calc(1 - var(--hy) * 1.6);}
+.heroi-topo{opacity:calc(1 - var(--hy) * 2.2);}
+.heroi h1{animation:entraTitulo 1.3s cubic-bezier(.16,1,.3,1) .15s both;}
+.heroi-lado{animation:entraTitulo 1.3s cubic-bezier(.16,1,.3,1) .35s both;}
+.marca-gigante{animation:respira 9s ease-in-out infinite, entraB7 1.8s cubic-bezier(.16,1,.3,1) both;}
+@keyframes entraTitulo{from{opacity:0;transform:translateY(50px);filter:blur(10px)}}
+@keyframes entraB7{from{opacity:0;letter-spacing:.05em;filter:blur(20px)}}
+/* faixas inclinam conforme a velocidade da rolagem */
+.fita-in,.clientes-in{will-change:transform;}
+.fita{transform:skewY(calc(var(--vel,0) * -1.6deg));transition:transform .4s cubic-bezier(.2,.8,.2,1);}
+/* manifesto: as palavras acendem uma a uma conforme rola */
+.manifesto{--mp:0;}
+.m-linha{display:block;}
+.m-pal{display:inline-block;white-space:pre;opacity:clamp(.12,calc((var(--mp) * 1.35 - var(--i) / var(--n)) * 5 + .12),1);
+  transform:translateY(calc((1 - clamp(0,(var(--mp) * 1.35 - var(--i) / var(--n)) * 5,1)) * 14px));transition:opacity .25s linear, transform .25s linear;}
+.m-linha.fim .m-pal{font-weight:700;background:var(--grad-tx);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.manifesto-simbolo{rotate:calc(var(--mp) * 40deg);scale:calc(.85 + var(--mp) * .35);}
+.manifesto-luz{opacity:calc(.4 + var(--mp) * .8);}
+/* trabalhos: o cartão de baixo cobre o de cima, que recua e escurece */
+.projeto{--sai:0;}
+.projeto-cx{transform:scale(calc(1 - var(--sai) * .07)) translateY(calc(var(--sai) * -2%));filter:brightness(calc(1 - var(--sai) * .45));transform-origin:50% 0;}
+/* cartões com luz que segue o mouse */
+.luz{position:relative;isolation:isolate;}
+.luz::after{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;opacity:0;transition:opacity .35s;pointer-events:none;
+  background:radial-gradient(420px circle at var(--mx,50%) var(--my,50%),rgba(226,64,156,.16),rgba(91,43,198,.08) 40%,transparent 65%);}
+.luz:hover::after{opacity:1;}
+.servico{transition:background .3s;}
+.servico h3{transition:transform .4s cubic-bezier(.2,.8,.2,1);}
+.servico:hover h3{transform:translateX(8px);}
+.servico-n{display:inline-block;transition:transform .4s cubic-bezier(.3,1.6,.5,1);}
+.servico:hover .servico-n{transform:scale(1.35) rotate(-8deg);}
+.inclina{transition:transform .5s cubic-bezier(.2,.8,.2,1);will-change:transform;}
+.ima{transition:transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .25s;}
+/* números que contam */
+.manifesto-num b{font-variant-numeric:tabular-nums;}
+@media (prefers-reduced-motion: reduce){
+  .aparece,h2.aparece{opacity:1;transform:none;filter:none;clip-path:none;transition:none;}
+  .m-pal{opacity:1;transform:none;}
+  .heroi h1,.heroi-lado,.marca-gigante{animation:none;}
+}
+
 /* nada vaza para os lados: no celular o navegador alargava a página e
    empurrava a barra de baixo e o menu para fora da tela */
 html,body{overflow-x:clip;max-width:100%;}
