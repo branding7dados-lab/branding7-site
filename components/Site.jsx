@@ -79,8 +79,8 @@ export default function Site() {
   const midiasCelular = useMemo(() => {
     const vids = itens.filter(i => (i.tipo === 'video' || i.tipo === 'depoimento') && (tipoLink(i.video_url) === 'arquivo' || i.capa_url))
       .map(i => tipoLink(i.video_url) === 'arquivo'
-        ? { video: i.video_url, nome: i.cliente_nome || i.titulo, arroba: i.cliente_arroba, titulo: i.titulo }
-        : { capa: i.capa_url, nome: i.cliente_nome || i.titulo, arroba: i.cliente_arroba, titulo: i.titulo });
+        ? { video: i.video_url, nome: i.cliente_nome || i.titulo, arroba: i.cliente_arroba, titulo: i.titulo, avatar: i.avatar_url }
+        : { capa: i.capa_url, nome: i.cliente_nome || i.titulo, arroba: i.cliente_arroba, titulo: i.titulo, avatar: i.avatar_url });
     const cli = itens.filter(i => i.tipo === 'cliente' && i.capa_url).map(i => ({ logo: i.capa_url, nome: i.cliente_nome || i.titulo }));
     return vids.concat(cli).slice(0, 14);
   }, [itens]);
@@ -309,7 +309,7 @@ export default function Site() {
           <div className="processo-ceu" aria-hidden="true" />
           <p className="rotulo centro">Processo de criação</p>
           <h2 className="processo-titulo" aria-label="Do roteiro ao resultado: seis passos">DO ROTEIRO<br />AO RESULTADO<br /><em>SEIS PASSOS</em></h2>
-          <div className="processo-centro"><Celular3D progresso={progressoProcesso} midias={midiasCelular} /></div>
+          <div className="processo-centro"><Celular3D progresso={progressoProcesso} midias={midiasCelular.filter(m => m.video || m.capa)} /></div>
           <ol className="processo-passos">
             {PASSOS.map(([t, d], k) => (
               <li key={t} style={{ '--k': k }}><span>{String(k + 1).padStart(2, '0')}</span><b>{t}</b><p>{d}</p></li>
@@ -562,7 +562,7 @@ function Obras({ videos, abrir, insta, insta_ }) {
               {v.categoria && <span className="obra-cat">{v.categoria}</span>}
               <span className="obra-play"><Play /></span>
               <span className="obra-base">
-                <b>{v.cliente_nome || v.titulo}</b>
+                <b>{v.avatar_url && <img className="obra-av" src={v.avatar_url} alt="" />}{v.cliente_nome || v.titulo}</b>
                 {v.titulo && v.cliente_nome && <small>{v.titulo}</small>}
                 {v.cliente_arroba && <small className="obra-arroba">@{String(v.cliente_arroba).replace(/^@/, '')}</small>}
               </span>

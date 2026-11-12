@@ -187,7 +187,7 @@ export default function Celular3D({ progresso, midias = [] }) {
         if (f > 0) { g.fillStyle = '#fff'; redondo(x, 86, Math.max(6, bw * f), 6, 3); g.fill(); }
       }
       /* autor */
-      const av = pegaImg(m.logo);
+      const av = pegaImg(m.avatar || m.logo);
       g.save(); g.beginPath(); g.arc(56, 140, 28, 0, Math.PI * 2); g.fillStyle = '#fff'; g.fill(); g.clip();
       if (av) g.drawImage(av, 28, 112, 56, 56); else { g.fillStyle = '#9A2AA8'; g.fillRect(28, 112, 56, 56); }
       g.restore();
