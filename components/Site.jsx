@@ -95,10 +95,16 @@ export default function Site() {
   const cta = cfg.cta || 'Quero vídeos assim';
   const sobreTexto = cfg.sobre_texto ? String(cfg.sobre_texto).split(/\n\s*\n/).map(t => t.trim()).filter(Boolean) : null;
   const insta_ = () => evento('Instagram');
+  /* menu: só as seções que existem no site */
+  const NAV = [['inicio', 'Início'], ['sobre', 'Sobre', mostra('sobre')], ['trabalhos', 'Trabalhos', mostra('trabalhos')], ['processo', 'Processo', mostra('processo')],
+    ['servicos', 'Serviços', mostra('servicos')], ['depoimentos', 'Depoimentos', mostra('depoimentos') && itens.some(i => i.tipo === 'depoimento')],
+    ['clientes', 'Clientes', mostra('clientes') && itens.some(i => i.tipo === 'cliente')], ['faq', 'Dúvidas', mostra('faq')], ['contato', 'Contato']]
+    .filter(n => n[2] !== false).map(n => [n[0], n[1]]);
+  const NAV_PILULA = NAV.filter(([id]) => ['inicio', 'trabalhos', 'processo', 'servicos', 'depoimentos'].includes(id));
 
   /* seção ativa na pílula + aparecer ao rolar */
   useEffect(() => {
-    const ids = ['inicio', 'trabalhos', 'processo', 'servicos', 'contato'];
+    const ids = ['inicio', 'sobre', 'trabalhos', 'processo', 'servicos', 'depoimentos', 'clientes', 'faq', 'contato'];
     const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) setAtivo(e.target.id); }), { rootMargin: '-45% 0px -50% 0px' });
     ids.forEach(id => { const el = document.getElementById(id); if (el) io.observe(el); });
     const io2 = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visivel'); io2.unobserve(e.target); } }), { rootMargin: '0px 0px -10% 0px' });
@@ -369,6 +375,12 @@ export default function Site() {
                   <figcaption><span className="depo-av">{(d.cliente_nome || '?').charAt(0)}</span><span><b>{d.cliente_nome}</b><small>{d.cliente_arroba ? '@' + String(d.cliente_arroba).replace(/^@/, '') : d.titulo}</small></span></figcaption>
                 </figure>
               ))}
+              <div className="depo-cta aparece">
+                <span className="depo-cta-aspas">“</span>
+                <b>A próxima história pode ser a da sua marca.</b>
+                <p>Roteiro, gravação e edição para o seu vídeo vender.</p>
+                <a className="pilula" href="#contato"><span>Quero meu orçamento</span><i><Seta /></i></a>
+              </div>
             </div>
           </div>
         </section>
@@ -376,7 +388,7 @@ export default function Site() {
 
       {/* ============ CLIENTES ============ */}
       {mostra('clientes') && clientes.length > 0 && (
-        <section className="clientes" aria-label="Clientes">
+        <section className="clientes" id="clientes" aria-label="Clientes">
           <p className="rotulo centro">Marcas que confiam na Branding7</p>
           <div className="clientes-faixa"><div className="clientes-in">
             {[0, 1].map(r => clientes.map(c => c.capa_url
@@ -397,7 +409,7 @@ export default function Site() {
       )}
 
       {/* ============ PERGUNTAS ============ */}
-      {mostra('faq') && <section className="faq">
+      {mostra('faq') && <section className="faq" id="faq">
         <div className="lim faq-in">
           <div><p className="rotulo aparece">Dúvidas</p><h2 className="aparece">Antes de começar, <em>tire suas dúvidas</em>.</h2></div>
           <div className="faq-lista">
@@ -424,13 +436,13 @@ export default function Site() {
         </div>
       </footer>
 
-      <MenuCelular wpp={wpp} insta={insta} />
+      <MenuCelular wpp={wpp} insta={insta} nav={NAV} />
       <Cinema />
 
       {/* navegação em pílula flutuante */}
       <nav className="pilula-nav" aria-label="Principal">
         <img src="/marca/symbol-white.png" alt="" width="20" height="24" />
-        {[['inicio', 'Início'], ['trabalhos', 'Trabalhos'], ['processo', 'Processo'], ['servicos', 'Serviços']].filter(([id]) => id === 'inicio' || mostra(id)).map(([id, r]) =>
+        {NAV_PILULA.map(([id, r]) =>
           <a key={id} href={'#' + id} className={ativo === id ? 'on' : ''}>{r}</a>)}
         <a className="pn-cta" href="#contato">Orçamento<i><Seta /></i></a>
       </nav>
@@ -732,7 +744,7 @@ function Visor() {
 }
 
 /* celular: topo de vidro com menu em tela cheia + barra de ações embaixo */
-function MenuCelular({ wpp, insta }) {
+function MenuCelular({ wpp, insta, nav }) {
   const [aberto, setAberto] = useState(false);
   const [rolou, setRolou] = useState(false);
   useEffect(() => {
@@ -749,8 +761,8 @@ function MenuCelular({ wpp, insta }) {
         <button className={'cel-menu-bt' + (aberto ? ' x' : '')} aria-label={aberto ? 'Fechar menu' : 'Abrir menu'} aria-expanded={aberto} onClick={() => setAberto(a => !a)}><i /><i /></button>
       </header>
       <nav className={'cel-menu' + (aberto ? ' aberto' : '')} aria-hidden={!aberto}>
-        {[['inicio', 'Início'], ['trabalhos', 'Trabalhos'], ['processo', 'Processo'], ['servicos', 'Serviços'], ['contato', 'Contato']].map(([id, rot], k) =>
-          <a key={id} href={'#' + id} onClick={ir} style={{ '--k': k }}><small>0{k + 1}</small>{rot}</a>)}
+        {nav.map(([id, rot], k) =>
+          <a key={id} href={'#' + id} onClick={ir} style={{ '--k': k }}><small>{String(k + 1).padStart(2, '0')}</small>{rot}</a>)}
         <div className="cel-menu-pe"><a href={insta} target="_blank" rel="noopener">Instagram</a><a href="https://sistema.branding7.com.br/">Área do cliente</a></div>
       </nav>
       <div className="cel-acoes">

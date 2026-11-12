@@ -767,6 +767,23 @@ html.cursor-cine .cursor-cine-el{display:block;}
   .creditos{font-size:15.5vw;padding-top:30px;}
 }
 
+/* depoimentos: cartões em pé + cartão "a próxima história" */
+.depo-lista{grid-template-columns:repeat(auto-fill,minmax(230px,270px)) !important;align-items:stretch;}
+.depo-video,.depo-cta{min-height:420px;}
+.depo-cta{position:relative;display:flex;flex-direction:column;justify-content:flex-end;gap:12px;padding:28px;border-radius:24px;overflow:hidden;isolation:isolate;
+  background:radial-gradient(120% 70% at 0% 100%,rgba(226,64,156,.35),transparent 60%),radial-gradient(100% 60% at 100% 0%,rgba(91,43,198,.45),transparent 60%),rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.12);}
+.depo-cta-aspas{position:absolute;top:6px;left:22px;font:800 150px/1 'Sora',sans-serif;background:var(--grad-tx);-webkit-background-clip:text;background-clip:text;color:transparent;opacity:.9;}
+.depo-cta b{font:600 26px/1.12 'Sora',sans-serif;letter-spacing:-.03em;}
+.depo-cta p{margin:0 0 8px;color:var(--tx-2);font-size:14.5px;}
+.depo-cta .pilula{align-self:flex-start;height:46px;font-size:14px;white-space:nowrap;gap:10px;padding-left:18px;}
+.depo-cta .pilula i{width:34px;height:34px;}
+@media (max-width:640px){
+  .depo-lista{grid-template-columns:1fr !important;}
+  .depo-video{min-height:0;}
+  .depo-cta{min-height:300px;}
+}
+
 /* nada vaza para os lados: no celular o navegador alargava a página e
    empurrava a barra de baixo e o menu para fora da tela */
 html,body{overflow-x:clip;max-width:100%;}
