@@ -602,6 +602,13 @@ h2.aparece.visivel{clip-path:inset(-20% -5% -20% -5%);}
 .obra-mais:hover{background:rgba(255,255,255,.05);color:#fff;}
 .obra-base b{display:flex;align-items:center;gap:8px;}
 .obra-av{width:28px;height:28px;border-radius:50%;object-fit:cover;background:#fff;flex:none;box-shadow:0 0 0 2px rgba(255,255,255,.85);}
+.obra-num{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
+.obra-num span{display:inline-flex;align-items:center;gap:5px;font:700 12.5px 'Inter',sans-serif;color:#fff;}
+.obra-num svg{width:14px;height:14px;opacity:.9;}
+.obra-num span:nth-child(2) svg{color:#ff4f8b;opacity:1;}
+.obra-res{display:inline-flex;align-items:center;gap:7px;align-self:flex-start;margin-top:8px;padding:6px 11px;border-radius:10px;
+  font:700 12.5px/1.25 'Inter',sans-serif;color:#fff;background:var(--grad);box-shadow:0 8px 20px -8px rgba(226,64,156,.7);}
+.obra-res svg{width:15px;height:15px;flex:none;}
 .reel-capa{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
 @media (max-width:640px){
   .trabalhos{padding:80px 0 60px !important;}
@@ -618,8 +625,13 @@ h2.aparece.visivel{clip-path:inset(-20% -5% -20% -5%);}
 .muro::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(70% 60% at 22% 78%,rgba(6,3,15,.95),rgba(6,3,15,.62) 55%,rgba(6,3,15,.25) 85%),linear-gradient(180deg,rgba(6,3,15,.6),transparent 30%,transparent 60%,rgba(6,3,15,.92));}
 .muro-plano{position:absolute;left:50%;top:50%;width:150%;height:200%;display:flex;gap:18px;justify-content:center;
-  transform:translate(-50%,-50%) rotate(-12deg) skewX(-6deg);animation:muroEntra 1.8s cubic-bezier(.16,1,.3,1) backwards;}
-@keyframes muroEntra{from{opacity:0;transform:translate(-50%,-44%) rotate(-18deg) skewX(-6deg) scale(1.12)}}
+  transform:translate(-50%,-50%) rotate(-14deg);animation:muroEntra 1.8s cubic-bezier(.16,1,.3,1) backwards;}
+/* com placa de vídeo: o muro deitado em perspectiva (parado; só as colunas andam) */
+.muro.m3d{perspective:1500px;}
+.m3d .muro-plano{transform-style:preserve-3d;transform:translate(-50%,-50%) rotateX(32deg) rotateZ(-16deg);animation-name:muroEntra3d;}
+@keyframes muroEntra3d{from{opacity:0;transform:translate(-50%,-42%) rotateX(52deg) rotateZ(-22deg) scale(1.12)}}
+.m3d .muro-t{backface-visibility:hidden;}
+@keyframes muroEntra{from{opacity:0;transform:translate(-50%,-44%) rotate(-20deg) scale(1.12)}}
 .muro-col{flex:0 0 clamp(130px,11vw,190px);translate:0 var(--y,0);}
 .muro-in{display:flex;flex-direction:column;gap:18px;animation:muroSobe var(--dur,40s) linear infinite;animation-direction:var(--dir,normal);will-change:transform;}
 @keyframes muroSobe{to{transform:translateY(calc(-50% - 9px))}}
@@ -684,10 +696,15 @@ h2.aparece.visivel{clip-path:inset(-20% -5% -20% -5%);}
 @media (min-width:641px){ .muro-plano{width:130%;height:175%;} }
 .muro-t img{filter:none;}
 .heroi-fundo{transform:none !important;}
-.muro-plano{opacity:calc(1 - var(--hy,0) * .7);}
+
 
 /* nada vaza para os lados: no celular o navegador alargava a página e
    empurrava a barra de baixo e o menu para fora da tela */
 html,body{overflow-x:clip;max-width:100%;}
 .heroi-fundo,.manifesto,.contato,.processo-palco{overflow:hidden;}
 @supports not (overflow:clip){ html,body{overflow-x:hidden;} }
+/* cartão de trabalho com resultados: base mais escura para ler bem */
+.obra-sombra{background:linear-gradient(180deg,rgba(0,0,0,.4),transparent 20%,transparent 38%,rgba(6,3,15,.75) 58%,rgba(6,3,15,.96) 100%) !important;}
+.obra-play{top:36% !important;}
+.obra-base b{font-size:18px !important;}
+.obra-base .obra-arroba{display:none;}

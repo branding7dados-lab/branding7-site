@@ -527,6 +527,11 @@ function rastreadores(cfg) {
 }
 
 /* cantos de visor, REC piscando e o tempo correndo na abertura */
+const IcOlho = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 5c5 0 9 4.5 10 7-1 2.5-5 7-10 7S3 14.5 2 12c1-2.5 5-7 10-7zm0 3.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/></svg>;
+const IcCoracao = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 21 3.6 12.9A5.2 5.2 0 0 1 12 6a5.2 5.2 0 0 1 8.4 6.9z"/></svg>;
+const IcBalao = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>;
+const IcSobe = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>;
+
 /* trabalhos: filtros por categoria + trilho de Reels (capa, cliente, play) */
 function Obras({ videos, abrir, insta, insta_ }) {
   const [cat, setCat] = useState('');
@@ -572,6 +577,12 @@ function Obras({ videos, abrir, insta, insta_ }) {
               <span className="obra-base">
                 <b>{v.avatar_url && <img className="obra-av" src={v.avatar_url} alt="" />}{v.cliente_nome || v.titulo}</b>
                 {v.titulo && v.cliente_nome && <small>{v.titulo}</small>}
+                {(v.visualizacoes || v.curtidas || v.comentarios) && <span className="obra-num">
+                  {v.visualizacoes && <span title="Visualizações"><IcOlho />{v.visualizacoes}</span>}
+                  {v.curtidas && <span title="Curtidas"><IcCoracao />{v.curtidas}</span>}
+                  {v.comentarios && <span title="Comentários"><IcBalao />{v.comentarios}</span>}
+                </span>}
+                {v.resultado && <span className="obra-res"><IcSobe />{v.resultado}</span>}
                 {v.cliente_arroba && <small className="obra-arroba">@{String(v.cliente_arroba).replace(/^@/, '')}</small>}
               </span>
             </button>
@@ -587,6 +598,18 @@ function Obras({ videos, abrir, insta, insta_ }) {
    velocidades diferentes; ao rolar, o muro endireita e se afasta (--hy) */
 function MuroReels({ itens, heroi }) {
   const [cols, setCols] = useState(6);
+  const [m3d, setM3d] = useState(false);
+  /* 3D (perspectiva) só onde o vídeo é desenhado pela placa de vídeo; em
+     computador sem aceleração ele fica plano (sem esticar) e leve */
+  useEffect(() => {
+    try {
+      const gl = document.createElement('canvas').getContext('webgl');
+      const ext = gl && gl.getExtension('WEBGL_debug_renderer_info');
+      const r = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : '';
+      const fraco = !gl || /swiftshader|llvmpipe|software|basic render/i.test(r) || (navigator.hardwareConcurrency || 8) <= 2;
+      setM3d(!fraco && !matchMedia('(prefers-reduced-motion: reduce)').matches);
+    } catch (e) { setM3d(false); }
+  }, []);
   useEffect(() => { const f = () => setCols(innerWidth < 640 ? 4 : innerWidth < 1100 ? 5 : 6); f(); addEventListener('resize', f); return () => removeEventListener('resize', f); }, []);
   const capas = itens.filter(i => (i.tipo === 'video' || i.tipo === 'depoimento') && (i.capa_url || tipoLink(i.video_url) === 'arquivo'))
     .map(i => i.capa_url ? { capa: i.capa_url } : { video: i.video_url });
@@ -599,7 +622,7 @@ function MuroReels({ itens, heroi }) {
   for (let k = 0; k < n; k++) { if (capas.length) base.push(capas[k % capas.length]); if (logos.length) base.push(logos[(k * 2) % logos.length]); if (logos.length > 1) base.push(logos[(k * 2 + 1) % logos.length]); }
   const porCol = 5;
   return (
-    <div className="muro" aria-hidden="true">
+    <div className={'muro' + (m3d ? ' m3d' : '')} aria-hidden="true">
       <div className="muro-plano">
         {Array.from({ length: cols }).map((_, c) => {
           const lista = Array.from({ length: porCol }).map((_, j) => base[(c * 3 + j * (c % 2 ? 2 : 1)) % base.length]);
