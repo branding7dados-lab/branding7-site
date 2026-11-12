@@ -4,6 +4,7 @@
    processo preso na rolagem e navegação em pílula flutuante. */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
+import Cinema from './Cinema';
 import { carregar, CFG_PADRAO, SERVICOS_PADRAO, linkWpp, tipoLink, embed, enviarLead, origemDaVisita, evento, registrar } from '@/lib/dados';
 
 /* a câmera 3D chega só no navegador e só quando a página já abriu */
@@ -173,7 +174,9 @@ export default function Site() {
   useEffect(() => {
     const limpa = () => { if (location.hash) history.replaceState(null, '', location.pathname + location.search); };
     const ir = id => { const el = document.getElementById(id); if (!el) return false;
-      el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); return true; };
+      if (window.__lenis) window.__lenis.scrollTo(el, { duration: 1.6 });
+      else el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+      return true; };
     const clique = e => {
       const a = e.target.closest && e.target.closest('a[href^="#"]'); if (!a || e.defaultPrevented || e.button) return;
       const id = a.getAttribute('href').slice(1); if (!id) return;
@@ -251,7 +254,10 @@ export default function Site() {
           <a className="topo-link" href={insta} target="_blank" rel="noopener" onClick={insta_}>@{String(cfg.instagram || 'b7.agencia').replace(/^@/, '')}</a>
         </header>
         <div className="heroi-base">
-          <h1><span className="h1-l"><span>O vídeo que faz</span></span><span className="h1-l"><span>você <Giro palavras={palavras} />.</span></span></h1>
+          <h1 aria-label={'O vídeo que faz você ' + (palavras[0] || 'vender') + '.'}>
+            <span className="h1-l" aria-hidden="true"><Letras texto="O vídeo que faz" de={0} /></span>
+            <span className="h1-l" aria-hidden="true"><Letras texto="você" de={15} />{' '}<Giro palavras={palavras} />.</span>
+          </h1>
           <div className="heroi-lado">
             <p>{cfg.subtitulo}</p>
             <div className="heroi-acoes">
@@ -406,6 +412,7 @@ export default function Site() {
       <Contato cfg={cfg} wpp={wpp} />
 
       <footer className="rodape">
+        <div className="creditos" aria-hidden="true"><span>BRANDING</span><span className="c7">7</span></div>
         <div className="lim rodape-in">
           <img src="/marca/logo-white.png" alt="Branding7" width="120" height="47" />
           <nav aria-label="Rodapé">
@@ -418,6 +425,7 @@ export default function Site() {
       </footer>
 
       <MenuCelular wpp={wpp} insta={insta} />
+      <Cinema />
 
       {/* navegação em pílula flutuante */}
       <nav className="pilula-nav" aria-label="Principal">
@@ -687,6 +695,18 @@ function Reel({ m, ativo }) {
       </div>
     </div>
   );
+}
+
+/* título que entra letra por letra (cada letra sobe de trás de uma máscara) */
+function Letras({ texto, de = 0 }) {
+  /* cada palavra fica inteira na linha (as letras não quebram no meio) */
+  let n = de;
+  return texto.split(' ').map((p, w, arr) => (
+    <span key={w} className="palavra">
+      {p.split('').map((c, k) => <span key={k} className="let" style={{ '--d': (n++) * 32 + 'ms' }}><span>{c}</span></span>)}
+      {w < arr.length - 1 && <span className="let-esp">{'\u00a0'}</span>}
+    </span>
+  ));
 }
 
 function Visor() {
