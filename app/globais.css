@@ -583,6 +583,8 @@ h2.aparece.visivel{clip-path:inset(-20% -5% -20% -5%);}
 }
 @media (prefers-reduced-motion: reduce){ .pilha,.h1-l > span,.fila-in,.trilho-in,.selo-txt{animation:none;} }
 
+@media (max-width:640px){ section[id]{scroll-margin-top:64px;} }
+
 /* nada vaza para os lados: no celular o navegador alargava a página e
    empurrava a barra de baixo e o menu para fora da tela */
 html,body{overflow-x:clip;max-width:100%;}

@@ -158,6 +158,23 @@ export default function Site() {
       document.removeEventListener('pointermove', mover); document.removeEventListener('pointerout', sair); };
   }, [itens, cfg]);
 
+  /* links internos (#contato, #trabalhos...) rolam até a seção sem deixar
+     o "#..." na barra de endereço */
+  useEffect(() => {
+    const limpa = () => { if (location.hash) history.replaceState(null, '', location.pathname + location.search); };
+    const ir = id => { const el = document.getElementById(id); if (!el) return false;
+      el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); return true; };
+    const clique = e => {
+      const a = e.target.closest && e.target.closest('a[href^="#"]'); if (!a || e.defaultPrevented || e.button) return;
+      const id = a.getAttribute('href').slice(1); if (!id) return;
+      if (ir(id)) { e.preventDefault(); limpa(); }
+    };
+    document.addEventListener('click', clique);
+    /* quem chega com um link tipo branding7.com.br/#contato vai até lá e o endereço fica limpo */
+    if (location.hash) { const id = decodeURIComponent(location.hash.slice(1)); setTimeout(() => { ir(id); limpa(); }, 400); }
+    return () => document.removeEventListener('click', clique);
+  }, []);
+
   /* processo: a rolagem dentro da seção vira --p (0 a 1) */
   useEffect(() => {
     const sec = document.getElementById('processo'); if (!sec) return;
@@ -342,7 +359,7 @@ export default function Site() {
 
       {/* ============ DEPOIMENTOS ============ */}
       {mostra('depoimentos') && depo.length > 0 && (
-        <section className="depoimentos">
+        <section className="depoimentos" id="depoimentos">
           <div className="lim">
             <p className="rotulo aparece">Depoimentos</p>
             <h2 className="aparece">Quem fez, <em>recomenda</em>.</h2>
