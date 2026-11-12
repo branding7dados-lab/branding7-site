@@ -10,7 +10,8 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
-const TW = 540, TH = 1170;          /* tela 9:19,5 */
+const TW = 540, TH = 1170;          /* tela 9:19,5 (coordenadas de desenho) */
+const ESC = 2;                      /* o canvas tem o dobro: 1080×2340, nítido de perto */
 const W = 7.4, H = 16, P = .82, R = 1.15;
 
 function retanguloRedondo(w, h, r) {
@@ -79,7 +80,7 @@ export default function Celular3D({ progresso, midias = [] }) {
     try { render = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' }); }
     catch (e) { el.classList.add('sem-3d'); return; }
     const calmo = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    render.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
+    render.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
     render.outputColorSpace = THREE.SRGBColorSpace; render.toneMapping = THREE.ACESFilmicToneMapping; render.toneMappingExposure = 1.1;
     el.appendChild(render.domElement);
     const cena = new THREE.Scene();
@@ -93,9 +94,12 @@ export default function Celular3D({ progresso, midias = [] }) {
     const contra = new THREE.DirectionalLight(0xc9b8ff, .9); contra.position.set(-6, 4, -14); cena.add(contra);
 
     /* ---------- a tela (canvas) ---------- */
-    const cv = document.createElement('canvas'); cv.width = TW; cv.height = TH;
+    const cv = document.createElement('canvas'); cv.width = TW * ESC; cv.height = TH * ESC;
     const g = cv.getContext('2d');
-    const texTela = new THREE.CanvasTexture(cv); texTela.colorSpace = THREE.SRGBColorSpace; texTela.anisotropy = 4;
+    const texTela = new THREE.CanvasTexture(cv); texTela.colorSpace = THREE.SRGBColorSpace;
+    /* sem mipmap (era o que deixava a tela borrada) e com o filtro máximo da placa */
+    texTela.generateMipmaps = false; texTela.minFilter = THREE.LinearFilter; texTela.magFilter = THREE.LinearFilter;
+    texTela.anisotropy = render.capabilities.getMaxAnisotropy();
     const { cel } = montarCelular(texTela);
     const giro = new THREE.Group(); giro.add(cel); cena.add(giro);
 
@@ -134,15 +138,16 @@ export default function Celular3D({ progresso, midias = [] }) {
       g.bezierCurveTo(x, y + s * .8, x + s * .5, y + s * .6, x + s * .5, y + s * .3); g.bezierCurveTo(x + s * .5, y, x, y, x, y + s * .3); g.fill(); };
 
     function desenhar(agora) {
+      g.setTransform(ESC, 0, 0, ESC, 0, 0); g.imageSmoothingQuality = 'high';
       const L = lista(), m = L[atual % L.length] || {};
       const t = (agora - inicio) / (m.video && videoPronto && video.duration ? video.duration * 1000 : DUR);
       if (!m.video && t >= 1) trocar(atual + 1);
       /* fundo */
       const capa = m.capa ? pegaImg(m.capa) : null;
       if (m.video && videoPronto && video.videoWidth) cobrir(video, video.videoWidth, video.videoHeight);
-      else if (capa) {   /* vídeo de link (Instagram/YouTube): a capa, com um zoom lento */
-        const z = 1 + Math.min(1, (agora - inicio) / DUR) * .06;
-        g.save(); g.translate(TW / 2, TH / 2); g.scale(z, z); g.translate(-TW / 2, -TH / 2); cobrir(capa, capa.width, capa.height); g.restore();
+      else if (m.capa && !capa) { return; }   /* capa ainda carregando: mantém a tela anterior */
+      else if (capa) {   /* vídeo de link (Instagram/YouTube): a capa */
+        cobrir(capa, capa.width, capa.height);
       }
       else {
         const k = agora / 1000;
@@ -228,7 +233,7 @@ export default function Celular3D({ progresso, midias = [] }) {
     let visivel = false, raf = 0, t0 = performance.now(), ry = 0, rx = 0, ultimaTela = 0;
     const quadro = agora => {
       raf = 0; if (!visivel) { video.pause(); return; }
-      const L = lista(); if (L.length !== quadro.n) { quadro.n = L.length; trocar(0); }
+      const L = lista(); if (L.length !== quadro.n) { quadro.n = L.length; L.forEach(x => { pegaImg(x.capa); pegaImg(x.avatar); }); trocar(0); }
       if (lista()[atual] && lista()[atual].video && video.paused) video.play().catch(() => {});
       const t = (performance.now() - t0) / 1000, p = progresso ? progresso() : 0;
       if (!segurando) { arrasto *= .94; arrastoV *= .9; }
@@ -239,7 +244,13 @@ export default function Celular3D({ progresso, midias = [] }) {
       giro.rotation.set(rx, ry, calmo ? 0 : Math.sin(t * .8) * .03);
       giro.position.y = calmo ? 0 : Math.sin(t * 1.1) * .4;
       /* ~30 quadros por segundo bastam (a tela é um vídeo de 30fps) */
-      if (agora - ultimaTela >= 32) { ultimaTela = agora; desenhar(performance.now()); render.render(cena, olho); }
+      if (agora - ultimaTela >= 32) {
+        ultimaTela = agora;
+        /* a tela só é redesenhada no ritmo do conteúdo: vídeo 30x/s, capa 10x/s */
+        const m = lista()[atual] || {}, ritmo = m.video && videoPronto ? 32 : 100;
+        if (agora - (quadro.ultDes || 0) >= ritmo) { quadro.ultDes = agora; desenhar(performance.now()); }
+        render.render(cena, olho);
+      }
       raf = requestAnimationFrame(quadro);
     };
     const pedir = () => { if (visivel && !raf) raf = requestAnimationFrame(quadro); };
