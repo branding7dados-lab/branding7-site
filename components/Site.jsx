@@ -4,7 +4,7 @@
    processo preso na rolagem e navegação em pílula flutuante. */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { carregar, CFG_PADRAO, SERVICOS_PADRAO, linkWpp, tipoLink, embed, enviarLead, origemDaVisita, evento } from '@/lib/dados';
+import { carregar, CFG_PADRAO, SERVICOS_PADRAO, linkWpp, tipoLink, embed, enviarLead, origemDaVisita, evento, registrar } from '@/lib/dados';
 
 /* a câmera 3D chega só no navegador e só quando a página já abriu */
 const Camera3D = dynamic(() => import('./Camera3D'), { ssr: false });
@@ -53,6 +53,19 @@ export default function Site() {
 
   useEffect(() => { carregar().then(({ cfg, itens }) => { setCfg(cfg); setItens(itens); rastreadores(cfg); }); }, []);
 
+  /* contagem própria: visita e "engajou" (rolou metade da página) */
+  useEffect(() => {
+    registrar('PageView');
+    let foi = false;
+    const rolar = () => {
+      if (foi) return;
+      const h = document.documentElement;
+      if ((scrollY + innerHeight) / Math.max(1, h.scrollHeight) > .5) { foi = true; evento('Engajou'); removeEventListener('scroll', rolar); }
+    };
+    addEventListener('scroll', rolar, { passive: true });
+    return () => removeEventListener('scroll', rolar);
+  }, []);
+
   const de = t => itens.filter(i => i.tipo === t);
   const videos = de('video'), depo = de('depoimento'), clientes = de('cliente');
   const servicos = de('servico').length ? de('servico') : SERVICOS_PADRAO;
@@ -62,6 +75,15 @@ export default function Site() {
   const insta = 'https://www.instagram.com/' + String(cfg.instagram || 'b7.agencia').replace(/^@/, '') + '/';
   const regioes = (cfg.regioes || []).filter(Boolean);
   const numeros = (cfg.numeros || []).filter(n => n && n.valor);
+  /* personalização feita no Sistema B7 → Site → Página (vazio = padrão) */
+  const mostra = k => !(cfg.secoes && cfg.secoes[k] === false);
+  const lista = (v, pad) => (Array.isArray(v) && v.filter(Boolean).length ? v.filter(Boolean) : pad);
+  const fita = lista(cfg.fita, ['VENDER', 'VIRALIZAR', 'PERFORMAR', 'ROTEIRO', 'GRAVAÇÃO', 'EDIÇÃO', 'CRIATIVOS', 'ANÚNCIOS']).map(w => String(w).toUpperCase());
+  const manifesto = lista(cfg.manifesto, ['PRENDA A ATENÇÃO.', 'CONTE A SUA HISTÓRIA.', 'FAÇA VENDER.']);
+  const notas = lista(cfg.notas, ['Os primeiros 3 segundos decidem se a pessoa fica.', 'Vídeo bom é o que traz cliente, não só curtida.']);
+  const cta = cfg.cta || 'Quero vídeos assim';
+  const sobreTexto = cfg.sobre_texto ? String(cfg.sobre_texto).split(/\n\s*\n/).map(t => t.trim()).filter(Boolean) : null;
+  const insta_ = () => evento('Instagram');
 
   /* seção ativa na pílula + aparecer ao rolar */
   useEffect(() => {
@@ -107,7 +129,7 @@ export default function Site() {
     addEventListener('keydown', k); return () => removeEventListener('keydown', k);
   }, [player]);
 
-  const PASSOS = [
+  const PASSOS = (Array.isArray(cfg.passos) && cfg.passos.length) ? cfg.passos.slice(0, 6).map(x => [x.t, x.d]) : [
     ['Diagnóstico', 'Entendemos o seu negócio, o seu público e o que precisa vender.'],
     ['Roteiro', 'Ganchos, falas e cenas pensados para prender a atenção e converter.'],
     ['Gravação', 'Captação profissional, com direção para você ficar à vontade na câmera.'],
@@ -115,7 +137,7 @@ export default function Site() {
     ['Publicação', 'Versões para Reels, TikTok, Stories e anúncios, prontas para subir.'],
     ['Performance', 'Olhamos o que funcionou e ajustamos o próximo vídeo para vender mais.']
   ];
-  const FAQ = [
+  const FAQ = (Array.isArray(cfg.faq) && cfg.faq.length) ? cfg.faq.map(x => [x.p, x.r]) : [
     ['Vocês gravam na minha cidade?', regioes.length ? 'Gravamos presencialmente em ' + regioes.join(', ') + '. Edição e criativos atendemos todo o Brasil.' : 'Fale com a gente pelo WhatsApp: dizemos na hora se a sua cidade está na nossa rota de gravação. Edição e criativos atendemos todo o Brasil.'],
     ['Eu preciso saber falar na câmera?', 'Não. A gente escreve o roteiro, dirige a gravação e deixa você à vontade. Muitos clientes nunca tinham gravado antes.'],
     ['Quanto tempo leva para o vídeo ficar pronto?', 'Depende do volume, mas o normal é receber os primeiros vídeos editados poucos dias depois da gravação.'],
@@ -135,7 +157,7 @@ export default function Site() {
         <Visor />
         <header className="heroi-topo">
           <img src="/marca/logo-white.png" alt="Branding7" width="132" height="52" />
-          <a className="topo-link" href={insta} target="_blank" rel="noopener">@{String(cfg.instagram || 'b7.agencia').replace(/^@/, '')}</a>
+          <a className="topo-link" href={insta} target="_blank" rel="noopener" onClick={insta_}>@{String(cfg.instagram || 'b7.agencia').replace(/^@/, '')}</a>
         </header>
         <div className="heroi-base">
           <h1>O vídeo que faz<br />você <Giro palavras={palavras} />.</h1>
@@ -143,47 +165,48 @@ export default function Site() {
             <p>{cfg.subtitulo}</p>
             <div className="heroi-acoes">
               <Botao href={wpp} alvo onClick={() => evento('Contact', { canal: 'whatsapp' })} claro>Solicitar orçamento</Botao>
-              <a className="pilula-simples" href="#trabalhos">Trabalhos</a>
+              {mostra('trabalhos') && <a className="pilula-simples" href="#trabalhos">Trabalhos</a>}
             </div>
           </div>
         </div>
       </section>
 
       {/* fita de palavras */}
-      <div className="fita" aria-hidden="true"><div className="fita-in">{Array.from({ length: 2 }).map((_, k) => <span key={k}>{['VENDER', 'VIRALIZAR', 'PERFORMAR', 'ROTEIRO', 'GRAVAÇÃO', 'EDIÇÃO', 'CRIATIVOS', 'ANÚNCIOS'].map(w => <b key={w}>{w}<em>✦</em></b>)}</span>)}</div></div>
+      <div className="fita" aria-hidden="true"><div className="fita-in">{Array.from({ length: 2 }).map((_, k) => <span key={k}>{fita.map((w, i) => <b key={i}>{w}<em>✦</em></b>)}</span>)}</div></div>
 
       {/* ============ MANIFESTO ============ */}
       <section className="manifesto">
         <div className="manifesto-luz" aria-hidden="true" />
         <img className="manifesto-simbolo" src="/marca/symbol-white.png" alt="" aria-hidden="true" width="199" height="236" />
         <div className="manifesto-tx aparece">
-          <h2>PRENDA A ATENÇÃO.<br />CONTE A SUA HISTÓRIA.<br /><em>FAÇA VENDER.</em></h2>
+          <h2>{manifesto.map((l, k) => k === manifesto.length - 1 ? <em key={k}>{l}</em> : <span key={k}>{l}<br /></span>)}</h2>
         </div>
-        <p className="nota n1 aparece">Os primeiros 3 segundos decidem se a pessoa fica.</p>
-        <p className="nota n2 aparece">Vídeo bom é o que traz cliente, não só curtida.</p>
+        {notas[0] && <p className="nota n1 aparece">{notas[0]}</p>}
+        {notas[1] && <p className="nota n2 aparece">{notas[1]}</p>}
         {numeros.length > 0 && <div className="manifesto-num">{numeros.map((n, k) => <div key={k} className="aparece"><b>{n.valor}</b><small>{n.rotulo}</small></div>)}</div>}
       </section>
 
       {/* ============ SOBRE (claro) ============ */}
-      <section className="sobre">
+      {mostra('sobre') && <section className="sobre">
         <div className="lim sobre-in">
           <div className="sobre-cartao aparece">
             <span className="sobre-av"><img src="/marca/symbol-white.png" alt="" width="40" height="47" /></span>
             <span><b>Branding7</b><small>Vídeo, criativos e marketing digital</small></span>
           </div>
           <div className="sobre-tx">
-            <h2 className="aparece">Muito além de <em>gravar um vídeo</em>.</h2>
+            <h2 className="aparece">{cfg.sobre_titulo ? cfg.sobre_titulo : <>Muito além de <em>gravar um vídeo</em>.</>}</h2>
             <div className="sobre-cols">
+              {sobreTexto ? sobreTexto.map((t, k) => <p className="aparece" key={k}>{t}</p>) : <>
               <p className="aparece">Na Branding7, cada vídeo nasce de uma estratégia: quem vai assistir, o que precisa sentir e o que tem que fazer depois. Roteiro, gravação e edição trabalham juntos para isso.</p>
-              <p className="aparece">O resultado é conteúdo que a sua marca tem orgulho de postar e que faz o cliente chamar no WhatsApp.</p>
+              <p className="aparece">O resultado é conteúdo que a sua marca tem orgulho de postar e que faz o cliente chamar no WhatsApp.</p></>}
             </div>
-            <Botao href={wpp} alvo onClick={() => evento('Contact', { canal: 'whatsapp' })}>Quero vídeos assim</Botao>
+            <Botao href={wpp} alvo onClick={() => evento('Contact', { canal: 'whatsapp' })}>{cta}</Botao>
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* ============ TRABALHOS (empilham ao rolar) ============ */}
-      <section className="trabalhos" id="trabalhos">
+      {mostra('trabalhos') && <section className="trabalhos" id="trabalhos">
         {videos.length > 0 && <div className="trabalhos-cab lim"><p className="rotulo">Projetos selecionados</p><h2>Vídeos que já estão <em>fazendo resultado</em>.</h2><p className="trabalhos-dica">Arraste para o lado →</p></div>}
         <div className="trabalhos-trilho">
         {videos.length > 0 ? videos.slice(0, 8).map((v, k, arr) => (
@@ -206,14 +229,14 @@ export default function Site() {
           <div className="trabalhos-vazio lim aparece">
             <p className="rotulo">Projetos selecionados</p>
             <h2>Os vídeos dos nossos clientes <em>estão chegando aqui</em>.</h2>
-            <Botao href={insta} alvo>Ver no Instagram</Botao>
+            <Botao href={insta} alvo onClick={insta_}>Ver no Instagram</Botao>
           </div>
         )}
         </div>
-      </section>
+      </section>}
 
       {/* ============ PROCESSO (preso na rolagem) ============ */}
-      <section className="processo" id="processo">
+      {mostra('processo') && <section className="processo" id="processo">
         <div className="processo-palco">
           <div className="processo-ceu" aria-hidden="true" />
           <p className="rotulo centro">Processo de criação</p>
@@ -226,10 +249,10 @@ export default function Site() {
           </ol>
           <p className="processo-pe">✦ Do primeiro papo ao vídeo no ar</p>
         </div>
-      </section>
+      </section>}
 
       {/* ============ SERVIÇOS ============ */}
-      <section className="servicos" id="servicos">
+      {mostra('servicos') && <section className="servicos" id="servicos">
         <div className="lim">
           <p className="rotulo aparece">Serviços</p>
           <h2 className="aparece">Tudo que o seu vídeo precisa para <em>performar</em>.</h2>
@@ -243,10 +266,10 @@ export default function Site() {
             ))}
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* ============ DEPOIMENTOS ============ */}
-      {depo.length > 0 && (
+      {mostra('depoimentos') && depo.length > 0 && (
         <section className="depoimentos">
           <div className="lim">
             <p className="rotulo aparece">Depoimentos</p>
@@ -270,7 +293,7 @@ export default function Site() {
       )}
 
       {/* ============ CLIENTES ============ */}
-      {clientes.length > 0 && (
+      {mostra('clientes') && clientes.length > 0 && (
         <section className="clientes" aria-label="Clientes">
           <p className="rotulo centro">Marcas que confiam na Branding7</p>
           <div className="clientes-faixa"><div className="clientes-in">
@@ -282,7 +305,7 @@ export default function Site() {
       )}
 
       {/* ============ REGIÕES ============ */}
-      {regioes.length > 0 && (
+      {mostra('regioes') && regioes.length > 0 && (
         <section className="regioes">
           <div className="lim regioes-in">
             <div><p className="rotulo aparece">Onde atendemos</p><h2 className="aparece">Gravação presencial na <em>sua cidade</em>.</h2><p className="aparece">Edição e criativos para todo o Brasil.</p></div>
@@ -292,7 +315,7 @@ export default function Site() {
       )}
 
       {/* ============ PERGUNTAS ============ */}
-      <section className="faq">
+      {mostra('faq') && <section className="faq">
         <div className="lim faq-in">
           <div><p className="rotulo aparece">Dúvidas</p><h2 className="aparece">Antes de começar, <em>tire suas dúvidas</em>.</h2></div>
           <div className="faq-lista">
@@ -301,7 +324,7 @@ export default function Site() {
             ))}
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* ============ CONTATO ============ */}
       <Contato cfg={cfg} wpp={wpp} />
@@ -310,7 +333,7 @@ export default function Site() {
         <div className="lim rodape-in">
           <img src="/marca/logo-white.png" alt="Branding7" width="120" height="47" />
           <nav aria-label="Rodapé">
-            <a href={insta} target="_blank" rel="noopener">Instagram</a>
+            <a href={insta} target="_blank" rel="noopener" onClick={insta_}>Instagram</a>
             <a href={wpp} target="_blank" rel="noopener">WhatsApp</a>
             <a href="https://sistema.branding7.com.br/">Área do cliente</a>
           </nav>
@@ -323,7 +346,7 @@ export default function Site() {
       {/* navegação em pílula flutuante */}
       <nav className="pilula-nav" aria-label="Principal">
         <img src="/marca/symbol-white.png" alt="" width="20" height="24" />
-        {[['inicio', 'Início'], ['trabalhos', 'Trabalhos'], ['processo', 'Processo'], ['servicos', 'Serviços']].map(([id, r]) =>
+        {[['inicio', 'Início'], ['trabalhos', 'Trabalhos'], ['processo', 'Processo'], ['servicos', 'Serviços']].filter(([id]) => id === 'inicio' || mostra(id)).map(([id, r]) =>
           <a key={id} href={'#' + id} className={ativo === id ? 'on' : ''}>{r}</a>)}
         <a className="pn-cta" href="#contato">Orçamento<i><Seta /></i></a>
       </nav>
@@ -346,6 +369,7 @@ function Contato({ cfg, wpp }) {
   const [msg, setMsg] = useState({ t: '', c: '' });
   const [enviando, setEnviando] = useState(false);
   const [tel, setTel] = useState('');
+  const abriu = useRef(false);
   const mascara = v => {
     const d = v.replace(/\D/g, '').slice(0, 13), n = d.startsWith('55') && d.length > 11 ? d.slice(2) : d;
     return n.length > 6 ? `(${n.slice(0, 2)}) ${n.slice(2, n.length - 4)}-${n.slice(-4)}` : n.length > 2 ? `(${n.slice(0, 2)}) ${n.slice(2)}` : n;
@@ -380,7 +404,7 @@ function Contato({ cfg, wpp }) {
             <span className="wpp-ic"><Zap /></span>
           </a>
         </div>
-        <form className="form" onSubmit={enviar} noValidate>
+        <form className="form" onSubmit={enviar} noValidate onFocus={() => { if (!abriu.current) { abriu.current = true; evento('Formulario'); } }}>
           <h3>Pedir um orçamento</h3>
           <label>Seu nome<input name="nome" autoComplete="name" required maxLength={120} /></label>
           <label>WhatsApp com DDD<input name="whatsapp" type="tel" inputMode="tel" autoComplete="tel" required maxLength={30} placeholder="(77) 99999-9999" value={tel} onChange={e => setTel(mascara(e.target.value))} /></label>
