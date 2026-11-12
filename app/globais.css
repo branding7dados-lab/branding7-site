@@ -217,6 +217,7 @@ em{font-style:normal;background:var(--grad-tx);-webkit-background-clip:text;back
 .wpp-ic svg{width:22px;height:22px;}
 .form{display:grid;gap:14px;padding:34px;border-radius:30px;background:rgba(255,255,255,.06);border:1px solid var(--borda);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);}
 .form h3{font-size:26px;font-weight:600;margin-bottom:6px;}
+.form-dica{margin:-2px 0 6px;font-size:14px;color:var(--tx-3);line-height:1.45;}
 .form label{display:grid;gap:7px;font-size:13.5px;font-weight:600;color:var(--tx-2);}
 .form label small{font-weight:400;color:var(--tx-3);}
 .form input,.form select,.form textarea{width:100%;padding:14px 16px;border-radius:14px;border:1px solid var(--borda);background:rgba(6,3,15,.55);color:var(--tx);font:16px 'Inter',sans-serif;outline:none;transition:border-color .2s, box-shadow .2s;}

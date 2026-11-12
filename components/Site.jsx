@@ -365,11 +365,15 @@ export default function Site() {
   );
 }
 
+const INTERESSES_PADRAO = ['Vídeos para Reels e TikTok', 'Criativos para anúncios', 'Gravação e edição', 'Casamento', 'Evento', 'Vídeo institucional',
+  'Gestão de redes sociais', 'Ainda não sei, quero conversar'];
+
 function Contato({ cfg, wpp }) {
   const [msg, setMsg] = useState({ t: '', c: '' });
   const [enviando, setEnviando] = useState(false);
   const [tel, setTel] = useState('');
   const abriu = useRef(false);
+  const interesses = (Array.isArray(cfg.interesses) && cfg.interesses.filter(Boolean).length) ? cfg.interesses.filter(Boolean) : INTERESSES_PADRAO;
   const mascara = v => {
     const d = v.replace(/\D/g, '').slice(0, 13), n = d.startsWith('55') && d.length > 11 ? d.slice(2) : d;
     return n.length > 6 ? `(${n.slice(0, 2)}) ${n.slice(2, n.length - 4)}-${n.slice(-4)}` : n.length > 2 ? `(${n.slice(0, 2)}) ${n.slice(2)}` : n;
@@ -406,6 +410,7 @@ function Contato({ cfg, wpp }) {
         </div>
         <form className="form" onSubmit={enviar} noValidate onFocus={() => { if (!abriu.current) { abriu.current = true; evento('Formulario'); } }}>
           <h3>Pedir um orçamento</h3>
+          <p className="form-dica">Preencha em poucas palavras o que você precisa. O comercial responde no seu WhatsApp.</p>
           <label>Seu nome<input name="nome" autoComplete="name" required maxLength={120} /></label>
           <label>WhatsApp com DDD<input name="whatsapp" type="tel" inputMode="tel" autoComplete="tel" required maxLength={30} placeholder="(77) 99999-9999" value={tel} onChange={e => setTel(mascara(e.target.value))} /></label>
           <div className="form-2">
@@ -415,14 +420,10 @@ function Contato({ cfg, wpp }) {
           <label>O que você precisa?
             <select name="interesse" defaultValue="">
               <option value="">Escolha uma opção</option>
-              <option>Vídeos para Reels e TikTok</option>
-              <option>Criativos para anúncios</option>
-              <option>Gravação e edição</option>
-              <option>Gestão de redes sociais</option>
-              <option>Ainda não sei, quero conversar</option>
+              {interesses.map(o => <option key={o}>{o}</option>)}
             </select>
           </label>
-          <label>Mensagem <small>(opcional)</small><textarea name="mensagem" rows={3} maxLength={1000} /></label>
+          <label>Conte rapidinho <small>(opcional)</small><textarea name="mensagem" rows={3} maxLength={1000} placeholder="Ex.: casamento dia 20/12 em Vitória da Conquista, quero o vídeo de melhores momentos." /></label>
           <button className="pilula clara larga" type="submit" disabled={enviando}><span>{enviando ? 'Enviando…' : 'Enviar e falar com o comercial'}</span><i><Seta /></i></button>
           <p className={'form-msg ' + msg.c} role="status">
             {msg.t === 'erro-envio' ? <>Não foi possível enviar agora. <a href={wpp} target="_blank" rel="noopener">Fale direto no WhatsApp</a>.</> : msg.t}
