@@ -815,6 +815,15 @@ html.cursor-cine .cursor-cine-el{display:block;}
   .depo-combo-tx{padding:26px 22px 24px;}
 }
 
+/* barra de rolagem: fina, escura e com o degradê da marca */
+html{scrollbar-width:thin;scrollbar-color:#7b3fd1 #06030f;}
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-track{background:#06030f;}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#5B2BC6,#9A2AA8 55%,#E2409C);border-radius:99px;border:2px solid #06030f;}
+::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,#6d3be0,#b13cc0 55%,#f0549f);border-width:1px;}
+::-webkit-scrollbar-button{display:none;width:0;height:0;}
+::-webkit-scrollbar-corner{background:#06030f;}
+
 /* nada vaza para os lados: no celular o navegador alargava a página e
    empurrava a barra de baixo e o menu para fora da tela */
 html,body{overflow-x:clip;max-width:100%;}
