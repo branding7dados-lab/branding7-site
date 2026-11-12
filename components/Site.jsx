@@ -77,8 +77,10 @@ export default function Site() {
   const numeros = (cfg.numeros || []).filter(n => n && n.valor);
   /* tela do celular 3D: vídeos enviados (arquivo) e, depois, os clientes do site */
   const midiasCelular = useMemo(() => {
-    const vids = itens.filter(i => (i.tipo === 'video' || i.tipo === 'depoimento') && tipoLink(i.video_url) === 'arquivo')
-      .map(i => ({ video: i.video_url, nome: i.cliente_nome || i.titulo, arroba: i.cliente_arroba, titulo: i.titulo, logo: i.capa_url && i.tipo !== 'video' ? i.capa_url : null }));
+    const vids = itens.filter(i => (i.tipo === 'video' || i.tipo === 'depoimento') && (tipoLink(i.video_url) === 'arquivo' || i.capa_url))
+      .map(i => tipoLink(i.video_url) === 'arquivo'
+        ? { video: i.video_url, nome: i.cliente_nome || i.titulo, arroba: i.cliente_arroba, titulo: i.titulo }
+        : { capa: i.capa_url, nome: i.cliente_nome || i.titulo, arroba: i.cliente_arroba, titulo: i.titulo });
     const cli = itens.filter(i => i.tipo === 'cliente' && i.capa_url).map(i => ({ logo: i.capa_url, nome: i.cliente_nome || i.titulo }));
     return vids.concat(cli).slice(0, 14);
   }, [itens]);
@@ -293,27 +295,9 @@ export default function Site() {
         </div>
       </section>}
 
-      {/* ============ TRABALHOS (empilham ao rolar) ============ */}
+      {/* ============ TRABALHOS: Reels lado a lado ============ */}
       {mostra('trabalhos') && <section className="trabalhos" id="trabalhos">
-        {videos.length > 0 && <div className="trabalhos-cab lim"><p className="rotulo">Projetos selecionados</p><h2>Vídeos que já estão <em>fazendo resultado</em>.</h2><p className="trabalhos-dica">Arraste para o lado →</p></div>}
-        <div className="trabalhos-trilho">
-        {videos.length > 0 ? videos.slice(0, 8).map((v, k, arr) => (
-          <article className="projeto" key={v.id} style={{ '--k': k }}>
-            <div className="projeto-cx">
-              <VideoFundo src={v.video_url} capa={v.capa_url} />
-              {!v.capa_url && tipoLink(v.video_url) !== 'arquivo' && <div className="projeto-arte" aria-hidden="true"><img src="/marca/symbol-white.png" alt="" width="199" height="236" /></div>}
-              <div className="projeto-sombra" />
-              <span className="projeto-rot">Projetos selecionados</span>
-              {v.categoria && <span className="projeto-cat">{v.categoria}</span>}
-              <div className="projeto-base">
-                <h3>{v.cliente_nome || v.titulo}</h3>
-                <p>{[v.titulo && v.cliente_nome ? v.titulo : null, v.cliente_arroba ? '@' + String(v.cliente_arroba).replace(/^@/, '') : null].filter(Boolean).join(' · ')}</p>
-                <button className="ver" onClick={() => abrir(v.video_url || v.link)}><i><Play /></i>Ver vídeo<Seta /></button>
-              </div>
-              <span className="projeto-n">{String(k + 1).padStart(2, '0')} / {String(arr.length).padStart(2, '0')}</span>
-            </div>
-          </article>
-        )) : (
+        {videos.length > 0 ? <Obras videos={videos} abrir={abrir} insta={insta} insta_={insta_} /> : (
           <div className="trabalhos-vazio lim aparece">
             <p className="rotulo">Projetos selecionados</p>
             <h2>Os vídeos dos nossos clientes <em>estão chegando aqui</em>.</h2>
@@ -321,7 +305,6 @@ export default function Site() {
             {midiasCelular.length > 0 && <div className="trilho-reels" aria-hidden="true"><div className="trilho-in">{[0, 1].map(r => midiasCelular.map((m, k) => <Reel key={r + '-' + k} m={m} />))}</div></div>}
           </div>
         )}
-        </div>
       </section>}
 
       {/* ============ PROCESSO (preso na rolagem) ============ */}
@@ -540,6 +523,62 @@ function rastreadores(cfg) {
 }
 
 /* cantos de visor, REC piscando e o tempo correndo na abertura */
+/* trabalhos: filtros por categoria + trilho de Reels (capa, cliente, play) */
+function Obras({ videos, abrir, insta, insta_ }) {
+  const [cat, setCat] = useState('');
+  const trilho = useRef(null);
+  const cats = [...new Set(videos.map(v => v.categoria).filter(Boolean))];
+  const lista = cat ? videos.filter(v => v.categoria === cat) : videos;
+  const andar = d => { const t = trilho.current; if (t) t.scrollBy({ left: d * Math.min(t.clientWidth * .8, 620), behavior: 'smooth' }); };
+  /* arrastar com o mouse (no celular o dedo já rola) */
+  useEffect(() => {
+    const t = trilho.current; if (!t || !matchMedia('(pointer: fine)').matches) return;
+    let x0 = 0, s0 = 0, segura = false, moveu = 0;
+    const d = e => { segura = true; moveu = 0; x0 = e.clientX; s0 = t.scrollLeft; t.classList.add('pegando'); };
+    const m = e => { if (!segura) return; const dx = e.clientX - x0; moveu = Math.abs(dx); t.scrollLeft = s0 - dx; };
+    const u = () => { segura = false; t.classList.remove('pegando'); };
+    const c = e => { if (moveu > 6) { e.preventDefault(); e.stopPropagation(); } };
+    t.addEventListener('pointerdown', d); addEventListener('pointermove', m); addEventListener('pointerup', u); t.addEventListener('click', c, true);
+    return () => { t.removeEventListener('pointerdown', d); removeEventListener('pointermove', m); removeEventListener('pointerup', u); t.removeEventListener('click', c, true); };
+  }, []);
+  return (
+    <div className="obras">
+      <div className="lim obras-cab">
+        <div>
+          <p className="rotulo aparece">Projetos selecionados</p>
+          <h2 className="aparece">Vídeos que já estão <em>fazendo resultado</em>.</h2>
+        </div>
+        <div className="obras-nav">
+          <button onClick={() => andar(-1)} aria-label="Voltar"><Seta /></button>
+          <button onClick={() => andar(1)} aria-label="Avançar"><Seta /></button>
+        </div>
+      </div>
+      {cats.length > 1 && <div className="lim obras-filtro aparece">{[''].concat(cats).map(c =>
+        <button key={c || 'todos'} className={cat === c ? 'on' : ''} onClick={() => setCat(c)}>{c || 'Todos'}</button>)}</div>}
+      <div className="obras-trilho" ref={trilho}>
+        {lista.map((v, k) => (
+          <article className="obra aparece" key={v.id} style={{ '--k': k }}>
+            <button className="obra-cx inclina" onClick={() => abrir(v.video_url || v.link)} aria-label={'Ver vídeo: ' + (v.titulo || v.cliente_nome || '')}>
+              {v.capa_url ? <img src={v.capa_url} alt="" loading="lazy" draggable="false" />
+                : tipoLink(v.video_url) === 'arquivo' ? <video src={v.video_url + '#t=0.5'} muted playsInline preload="metadata" />
+                : <span className="obra-arte"><img src="/marca/symbol-white.png" alt="" /></span>}
+              <span className="obra-sombra" />
+              {v.categoria && <span className="obra-cat">{v.categoria}</span>}
+              <span className="obra-play"><Play /></span>
+              <span className="obra-base">
+                <b>{v.cliente_nome || v.titulo}</b>
+                {v.titulo && v.cliente_nome && <small>{v.titulo}</small>}
+                {v.cliente_arroba && <small className="obra-arroba">@{String(v.cliente_arroba).replace(/^@/, '')}</small>}
+              </span>
+            </button>
+          </article>
+        ))}
+        <a className="obra obra-mais" href={insta} target="_blank" rel="noopener" onClick={insta_}><span>Ver mais no Instagram<Seta /></span></a>
+      </div>
+    </div>
+  );
+}
+
 /* cartão vertical de Reels: vídeo (arquivo) ou o logo do cliente */
 function Reel({ m, ativo }) {
   const v = useRef(null);
@@ -552,6 +591,7 @@ function Reel({ m, ativo }) {
   return (
     <div className={'reel' + (ativo ? ' ativo' : '')}>
       {m.video ? <video ref={v} src={m.video} muted loop playsInline preload="metadata" />
+        : m.capa ? <img className="reel-capa" src={m.capa} alt="" />
         : <div className="reel-logo"><img src={m.logo || '/marca/symbol-white.png'} alt="" /></div>}
       <div className="reel-ui">
         <span className="reel-barra"><i /></span>

@@ -585,6 +585,59 @@ h2.aparece.visivel{clip-path:inset(-20% -5% -20% -5%);}
 
 @media (max-width:640px){ section[id]{scroll-margin-top:64px;} }
 
+/* ====================== TRABALHOS: Reels lado a lado ====================== */
+.trabalhos{background:var(--preto) !important;padding:110px 0 90px !important;}
+.obras-cab{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:26px;}
+.obras-cab h2{max-width:15ch;color:var(--tx);}
+.obras-cab .rotulo{color:var(--tx-3);}
+.obras-nav{display:flex;gap:10px;}
+.obras-nav button{width:54px;height:54px;border-radius:50%;border:1px solid var(--borda);background:rgba(255,255,255,.04);color:#fff;cursor:pointer;display:grid;place-items:center;transition:background .25s,transform .25s;}
+.obras-nav button:hover{background:rgba(255,255,255,.12);transform:scale(1.06);}
+.obras-nav button svg{width:18px;height:18px;}
+.obras-nav button:first-child svg{transform:rotate(-135deg);}
+.obras-nav button:last-child svg{transform:rotate(45deg);}
+.obras-filtro{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;}
+.obras-filtro button{height:38px;padding:0 16px;border-radius:99px;border:1px solid var(--borda);background:transparent;color:var(--tx-2);font:600 13px 'Inter',sans-serif;cursor:pointer;transition:all .25s;}
+.obras-filtro button:hover{color:#fff;border-color:rgba(255,255,255,.35);}
+.obras-filtro button.on{background:#fff;color:#14092e;border-color:#fff;}
+.obras-trilho{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;cursor:grab;user-select:none;
+  padding:10px max(24px,calc((100vw - var(--lim)) / 2)) 30px;scroll-padding:0 max(24px,calc((100vw - var(--lim)) / 2));}
+.obras-trilho::-webkit-scrollbar{display:none;}
+.obras-trilho.pegando{cursor:grabbing;scroll-snap-type:none;}
+.obra{flex:0 0 clamp(200px,17vw,260px);scroll-snap-align:start;transition-delay:calc(var(--k,0) * 70ms) !important;}
+.obra-cx{position:relative;display:block;width:100%;aspect-ratio:9/16;padding:0;border:0;border-radius:24px;overflow:hidden;isolation:isolate;cursor:pointer;color:#fff;text-align:left;
+  background:var(--grad);box-shadow:0 24px 50px -24px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.08);}
+.obra-cx > img,.obra-cx > video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform 1.2s cubic-bezier(.16,1,.3,1);pointer-events:none;}
+.obra-cx:hover > img,.obra-cx:hover > video{transform:scale(1.06);}
+.obra-arte{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(60% 50% at 30% 20%,rgba(255,255,255,.22),transparent 70%),var(--grad);}
+.obra-arte img{width:34%;opacity:.25;}
+.obra-sombra{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.35),transparent 24%,transparent 52%,rgba(0,0,0,.85));}
+.obra-cat{position:absolute;top:14px;left:14px;padding:6px 12px;border-radius:99px;font:700 11px 'Inter',sans-serif;letter-spacing:.04em;background:rgba(0,0,0,.4);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
+.obra-play{position:absolute;top:50%;left:50%;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;display:grid;place-items:center;
+  background:rgba(255,255,255,.18);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.35);
+  transform:scale(.85);opacity:.9;transition:transform .5s cubic-bezier(.3,1.6,.5,1),background .3s;}
+.obra-play svg{width:22px;height:22px;margin-left:3px;}
+.obra-cx:hover .obra-play{transform:scale(1.05);background:var(--grad);border-color:transparent;}
+.obra-base{position:absolute;left:16px;right:16px;bottom:16px;display:flex;flex-direction:column;gap:3px;transition:transform .5s cubic-bezier(.16,1,.3,1);}
+.obra-cx:hover .obra-base{transform:translateY(-4px);}
+.obra-base b{font:600 20px/1.15 'Sora',sans-serif;letter-spacing:-.02em;}
+.obra-base small{font-size:13px;color:rgba(255,255,255,.82);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.obra-base .obra-arroba{color:rgba(255,255,255,.6);}
+.obra-mais{display:grid;place-items:center;flex:0 0 clamp(180px,16vw,220px);aspect-ratio:9/16;border-radius:24px;border:1px dashed rgba(255,255,255,.25);
+  color:var(--tx-2);font:600 15px 'Sora',sans-serif;text-align:center;scroll-snap-align:start;transition:background .3s,color .3s;}
+.obra-mais span{display:flex;flex-direction:column;align-items:center;gap:12px;}
+.obra-mais svg{width:22px;height:22px;}
+.obra-mais:hover{background:rgba(255,255,255,.05);color:#fff;}
+.reel-capa{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+@media (max-width:640px){
+  .trabalhos{padding:80px 0 60px !important;}
+  .obras-cab{padding:0 16px;width:auto;}
+  .obras-nav{display:none;}
+  .obras-filtro{padding:0 16px;width:auto;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;}
+  .obras-trilho{padding:6px 16px 24px;scroll-padding:0 16px;gap:12px;}
+  .obra{flex-basis:62vw;}
+}
+
 /* nada vaza para os lados: no celular o navegador alargava a página e
    empurrava a barra de baixo e o menu para fora da tela */
 html,body{overflow-x:clip;max-width:100%;}

@@ -141,7 +141,12 @@ export default function Celular3D({ progresso, midias = [] }) {
       const t = (agora - inicio) / (m.video && videoPronto && video.duration ? video.duration * 1000 : DUR);
       if (!m.video && t >= 1) trocar(atual + 1);
       /* fundo */
+      const capa = m.capa ? pegaImg(m.capa) : null;
       if (m.video && videoPronto && video.videoWidth) cobrir(video, video.videoWidth, video.videoHeight);
+      else if (capa) {   /* vídeo de link (Instagram/YouTube): a capa, com um zoom lento */
+        const z = 1 + Math.min(1, (agora - inicio) / DUR) * .06;
+        g.save(); g.translate(TW / 2, TH / 2); g.scale(z, z); g.translate(-TW / 2, -TH / 2); cobrir(capa, capa.width, capa.height); g.restore();
+      }
       else {
         const k = agora / 1000;
         const gr = g.createLinearGradient(0, 0, TW, TH);
