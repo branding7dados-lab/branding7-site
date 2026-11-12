@@ -30,15 +30,14 @@ function carregarImg(src) {
 
 function montarCelular(texTela) {
   const cel = new THREE.Group();
-  const aro = new THREE.MeshPhysicalMaterial({ color: 0x2b2440, roughness: .32, metalness: .9, clearcoat: .6, clearcoatRoughness: .25 });
-  const traseira = new THREE.MeshPhysicalMaterial({ color: 0x241a3d, roughness: .22, metalness: .35, clearcoat: 1, clearcoatRoughness: .08,
-    sheen: .6, sheenColor: new THREE.Color(0xe2409c), sheenRoughness: .4 });
-  const vidroPreto = new THREE.MeshPhysicalMaterial({ color: 0x050308, roughness: .05, metalness: .1, clearcoat: 1, clearcoatRoughness: 0 });
-  const lenteMat = new THREE.MeshPhysicalMaterial({ color: 0x07040f, roughness: .02, metalness: .2, clearcoat: 1, iridescence: 1, iridescenceIOR: 1.7, iridescenceThicknessRange: [200, 700] });
+  const aro = new THREE.MeshStandardMaterial({ color: 0x2b2440, roughness: .3, metalness: .9 });
+  const traseira = new THREE.MeshStandardMaterial({ color: 0x2a1d47, roughness: .25, metalness: .4 });
+  const vidroPreto = new THREE.MeshStandardMaterial({ color: 0x050308, roughness: .08, metalness: .2 });
+  const lenteMat = new THREE.MeshStandardMaterial({ color: 0x0a0618, roughness: .05, metalness: .6 });
   const metal = new THREE.MeshStandardMaterial({ color: 0xbfb8d6, roughness: .25, metalness: 1 });
 
   /* corpo: aro metálico e a traseira de vidro */
-  cel.add(new THREE.Mesh(new RoundedBoxGeometry(W, H, P, 8, R * .62), aro));
+  cel.add(new THREE.Mesh(new RoundedBoxGeometry(W, H, P, 5, R * .62), aro));
   const tras = new THREE.Mesh(retanguloRedondo(W - .12, H - .12, R - .05), traseira);
   tras.rotation.y = Math.PI; tras.position.z = -P / 2 - .002; cel.add(tras);
   /* frente: moldura preta + tela */
@@ -48,16 +47,14 @@ function montarCelular(texTela) {
     new THREE.MeshBasicMaterial({ map: texTela, toneMapped: false }));
   tela.position.z = P / 2 + .006; cel.add(tela);
   /* reflexo sutil no vidro */
-  const brilho = new THREE.Mesh(retanguloRedondo(W - .48, H - .48, R - .25),
-    new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: .06, roughness: .05, metalness: 0, clearcoat: 1, depthWrite: false }));
-  brilho.position.z = P / 2 + .01; cel.add(brilho);
+
 
   /* botões laterais */
   const botao = (y, h, lado) => { const b = new THREE.Mesh(new RoundedBoxGeometry(.16, h, .34, 4, .07), aro); b.position.set(lado * (W / 2 + .05), y, 0); cel.add(b); };
   botao(3.6, 1.1, -1); botao(2.0, 1.6, -1); botao(.2, 1.6, -1); botao(2.6, 2.4, 1);
 
   /* módulo de câmeras na traseira */
-  const modulo = new THREE.Mesh(new RoundedBoxGeometry(3.3, 3.3, .3, 6, .75), new THREE.MeshPhysicalMaterial({ color: 0x1a1230, roughness: .15, metalness: .5, clearcoat: 1 }));
+  const modulo = new THREE.Mesh(new RoundedBoxGeometry(3.3, 3.3, .3, 4, .75), new THREE.MeshStandardMaterial({ color: 0x1a1230, roughness: .2, metalness: .5 }));
   modulo.position.set(W / 2 - 2.15, H / 2 - 2.15, -P / 2 - .12); cel.add(modulo);
   const lente = (x, y, r) => {
     const g = new THREE.Group(); g.position.set(modulo.position.x + x, modulo.position.y + y, -P / 2 - .3);
@@ -82,7 +79,7 @@ export default function Celular3D({ progresso, midias = [] }) {
     try { render = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' }); }
     catch (e) { el.classList.add('sem-3d'); return; }
     const calmo = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    render.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    render.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
     render.outputColorSpace = THREE.SRGBColorSpace; render.toneMapping = THREE.ACESFilmicToneMapping; render.toneMappingExposure = 1.1;
     el.appendChild(render.domElement);
     const cena = new THREE.Scene();
@@ -241,8 +238,8 @@ export default function Celular3D({ progresso, midias = [] }) {
       ry += (alvoY - ry) * (calmo ? 1 : .085); rx += (alvoX - rx) * .08;
       giro.rotation.set(rx, ry, calmo ? 0 : Math.sin(t * .8) * .03);
       giro.position.y = calmo ? 0 : Math.sin(t * 1.1) * .4;
-      if (agora - ultimaTela > 33) { ultimaTela = agora; desenhar(performance.now()); }
-      render.render(cena, olho);
+      /* ~30 quadros por segundo bastam (a tela é um vídeo de 30fps) */
+      if (agora - ultimaTela >= 32) { ultimaTela = agora; desenhar(performance.now()); render.render(cena, olho); }
       raf = requestAnimationFrame(quadro);
     };
     const pedir = () => { if (visivel && !raf) raf = requestAnimationFrame(quadro); };

@@ -117,22 +117,30 @@ export default function Site() {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const raiz = document.documentElement;
     let raf = 0, yAnt = scrollY, vel = 0;
+    const barra = document.querySelector('.barra-rolagem'), fitaEl = document.querySelector('.fita');
+    const h = document.querySelector('.heroi'), m = document.querySelector('.manifesto');
+    const ult = {};
+    /* escreve só quando muda (cada escrita custa um recálculo de estilo) */
+    const poe = (el, k, v) => { if (!el || ult[k] === v) return; ult[k] = v; el.style.setProperty(k.split('|')[0], v); };
     const passo = () => {
       raf = 0;
-      const y = scrollY, alt = raiz.scrollHeight - innerHeight;
+      /* 1) só leituras */
+      const y = scrollY, alt = raiz.scrollHeight - innerHeight, vh = innerHeight;
+      const rh = h && h.getBoundingClientRect(), rm = m && m.getBoundingClientRect();
       vel += ((y - yAnt) - vel) * .2; yAnt = y;
-      raiz.style.setProperty('--rol', (alt > 0 ? y / alt : 0).toFixed(4));
-      raiz.style.setProperty('--vel', Math.max(-1, Math.min(1, vel / 60)).toFixed(3));
-      const h = document.querySelector('.heroi');
-      if (h) { const r = h.getBoundingClientRect(); h.style.setProperty('--hy', Math.min(1, Math.max(0, -r.top / r.height)).toFixed(4)); }
-      const m = document.querySelector('.manifesto');
-      if (m) { const r = m.getBoundingClientRect(); m.style.setProperty('--mp', Math.min(1, Math.max(0, (innerHeight - r.top) / (innerHeight + r.height * .45))).toFixed(4)); }
-      document.querySelectorAll('.projeto').forEach(p => { const prox = p.nextElementSibling; if (!prox) { p.style.setProperty('--sai', 0); return; }
-        const rp = prox.getBoundingClientRect(); p.style.setProperty('--sai', Math.min(1, Math.max(0, 1 - rp.top / innerHeight)).toFixed(4)); });
-      if (Math.abs(vel) > .5) raf = requestAnimationFrame(passo); else raiz.style.setProperty('--vel', 0);
+      /* 2) só escritas */
+      if (barra) barra.style.transform = 'scaleX(' + (alt > 0 ? y / alt : 0).toFixed(4) + ')';
+      poe(fitaEl, '--vel|f', Math.abs(vel) > .5 ? Math.max(-1, Math.min(1, vel / 60)).toFixed(2) : '0');
+      if (rh && rh.bottom > -50) poe(h, '--hy|h', Math.min(1, Math.max(0, -rh.top / rh.height)).toFixed(3));
+      if (rm && rm.top < vh && rm.bottom > 0) poe(m, '--mp|m', Math.min(1, Math.max(0, (vh - rm.top) / (vh + rm.height * .45))).toFixed(3));
+      if (Math.abs(vel) > .5) raf = requestAnimationFrame(passo);
     };
     const pedir = () => { if (!raf) raf = requestAnimationFrame(passo); };
     addEventListener('scroll', pedir, { passive: true }); addEventListener('resize', pedir); passo();
+
+    /* partes fora da tela pausam as animações (classe .fora) */
+    const ioFora = new IntersectionObserver(es => es.forEach(e => e.target.classList.toggle('fora', !e.isIntersecting)), { rootMargin: '80px' });
+    document.querySelectorAll('.heroi, .fita, .clientes, .trabalhos, .processo').forEach(el => ioFora.observe(el));
 
     /* mouse: luz que segue o cursor nos cartões, inclinação e botões "ímã" */
     const fino = matchMedia('(pointer: fine)').matches;
@@ -156,7 +164,7 @@ export default function Site() {
       requestAnimationFrame(anda);
     }), { threshold: .6 });
     document.querySelectorAll('[data-conta]').forEach(el => io.observe(el));
-    return () => { removeEventListener('scroll', pedir); removeEventListener('resize', pedir); cancelAnimationFrame(raf); io.disconnect();
+    return () => { removeEventListener('scroll', pedir); removeEventListener('resize', pedir); cancelAnimationFrame(raf); io.disconnect(); ioFora.disconnect();
       document.removeEventListener('pointermove', mover); document.removeEventListener('pointerout', sair); };
   }, [itens, cfg]);
 
@@ -187,8 +195,8 @@ export default function Site() {
       const cel = matchMedia('(max-width: 640px)').matches;
       const p = cel ? Math.min(1, Math.max(0, (innerHeight - r.top) / (innerHeight + r.height)))
                     : Math.min(1, Math.max(0, -r.top / Math.max(1, total)));
-      sec.style.setProperty('--p', p.toFixed(4));
-      sec.dataset.fase = p < .28 ? '0' : '1';
+      const pv = p.toFixed(3);
+      if (pv !== medir.ult) { medir.ult = pv; sec.style.setProperty('--p', pv); const f = p < .28 ? '0' : '1'; if (sec.dataset.fase !== f) sec.dataset.fase = f; }
     };
     const pedir = () => { if (!raf) raf = requestAnimationFrame(medir); };
     addEventListener('scroll', pedir, { passive: true }); addEventListener('resize', pedir); medir();
@@ -579,7 +587,7 @@ function Obras({ videos, abrir, insta, insta_ }) {
    velocidades diferentes; ao rolar, o muro endireita e se afasta (--hy) */
 function MuroReels({ itens, heroi }) {
   const [cols, setCols] = useState(6);
-  useEffect(() => { const f = () => setCols(innerWidth < 640 ? 4 : innerWidth < 1100 ? 5 : 7); f(); addEventListener('resize', f); return () => removeEventListener('resize', f); }, []);
+  useEffect(() => { const f = () => setCols(innerWidth < 640 ? 4 : innerWidth < 1100 ? 5 : 6); f(); addEventListener('resize', f); return () => removeEventListener('resize', f); }, []);
   const capas = itens.filter(i => (i.tipo === 'video' || i.tipo === 'depoimento') && (i.capa_url || tipoLink(i.video_url) === 'arquivo'))
     .map(i => i.capa_url ? { capa: i.capa_url } : { video: i.video_url });
   if (heroi && !capas.some(c => c.video === heroi.video_url)) capas.unshift({ video: heroi.video_url });
@@ -589,7 +597,7 @@ function MuroReels({ itens, heroi }) {
   const base = [];
   const n = Math.max(capas.length, Math.ceil(logos.length / 2), 3);
   for (let k = 0; k < n; k++) { if (capas.length) base.push(capas[k % capas.length]); if (logos.length) base.push(logos[(k * 2) % logos.length]); if (logos.length > 1) base.push(logos[(k * 2 + 1) % logos.length]); }
-  const porCol = 6;
+  const porCol = 5;
   return (
     <div className="muro" aria-hidden="true">
       <div className="muro-plano">
@@ -600,8 +608,7 @@ function MuroReels({ itens, heroi }) {
               <div className="muro-in">{[0, 1].map(r => lista.map((t, j) => (
                 <div className={'muro-t' + (t.logo ? ' logo' : '')} key={r + '-' + j}>
                   {t.video ? <video src={t.video} muted loop autoPlay playsInline preload="metadata" />
-                    : t.capa ? <img src={t.capa} alt="" decoding="async" />
-                    : <img src={t.logo} alt="" decoding="async" />}
+                    : <img src={t.capa || t.logo} alt="" decoding="async" loading="eager" width="190" height={t.logo ? 190 : 338} />}
                 </div>)))}
               </div>
             </div>
@@ -619,8 +626,10 @@ function TextoAcende({ paragrafos }) {
     const el = ref.current; if (!el) return;
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) { el.style.setProperty('--ap', 1); return; }
     let raf = 0;
-    const medir = () => { raf = 0; const r = el.getBoundingClientRect();
-      el.style.setProperty('--ap', Math.min(1, Math.max(0, (innerHeight * .85 - r.top) / (r.height + innerHeight * .35))).toFixed(4)); };
+    let ult = '';
+    const medir = () => { raf = 0; const r = el.getBoundingClientRect(); if (r.bottom < -100 || r.top > innerHeight + 100) return;
+      const v = Math.min(1, Math.max(0, (innerHeight * .85 - r.top) / (r.height + innerHeight * .35))).toFixed(3);
+      if (v !== ult) { ult = v; el.style.setProperty('--ap', v); } };
     const pedir = () => { if (!raf) raf = requestAnimationFrame(medir); };
     addEventListener('scroll', pedir, { passive: true }); medir();
     return () => { removeEventListener('scroll', pedir); cancelAnimationFrame(raf); };
