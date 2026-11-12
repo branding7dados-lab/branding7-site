@@ -299,7 +299,7 @@ em{font-style:normal;background:var(--grad-tx);-webkit-background-clip:text;back
     --b:clamp(0,calc((var(--i) + .115 - var(--p)) * 25),1);
     opacity:calc(var(--a) * var(--b));background:#141027;}
   .processo-passos li:last-child{--b:1;}
-  .processo-centro{top:8%;width:118vw;}
+  .processo-centro{top:9%;width:100vw;left:0;}
   .servicos-lista{grid-template-columns:1fr;}
   .servico:nth-child(odd){border-right:0 !important;}
   .contato{padding:90px 0 120px;}
