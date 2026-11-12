@@ -180,9 +180,18 @@ em{font-style:normal;background:var(--grad-tx);-webkit-background-clip:text;back
 /* ---------- clientes ---------- */
 .clientes{padding:80px 0;background:var(--fundo-2);}
 .clientes-faixa{overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);}
-.clientes-in{display:flex;align-items:center;gap:64px;width:max-content;animation:corre 44s linear infinite;}
-.clientes-in span{font:600 24px 'Sora',sans-serif;color:var(--tx-3);white-space:nowrap;}
-.clientes-in img{height:42px;width:auto;filter:grayscale(1) brightness(1.8);opacity:.7;}
+.clientes-in{display:flex;align-items:center;gap:28px;width:max-content;padding:10px 0;animation:corre 50s linear infinite;}
+.clientes-faixa:hover .clientes-in{animation-play-state:paused;}
+.clientes-in span{display:inline-flex;align-items:center;height:96px;padding:0 26px;border-radius:24px;background:rgba(255,255,255,.06);border:1px solid var(--borda);
+  font:600 20px 'Sora',sans-serif;color:var(--tx-2);white-space:nowrap;}
+.clientes-in img{width:96px;height:96px;object-fit:cover;border-radius:24px;background:#fff;
+  box-shadow:0 10px 30px -12px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.08);transition:transform .3s cubic-bezier(.2,.8,.2,1);}
+.clientes-in img:hover{transform:translateY(-4px) scale(1.06);}
+@media (max-width:640px){
+  .clientes-in{gap:16px;}
+  .clientes-in img{width:72px;height:72px;border-radius:18px;}
+  .clientes-in span{height:72px;padding:0 18px;border-radius:18px;font-size:16px;}
+}
 
 /* ---------- regiões ---------- */
 .regioes{padding:120px 0;background:var(--creme);color:#14092e;}
