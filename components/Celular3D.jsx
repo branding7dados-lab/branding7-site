@@ -124,6 +124,15 @@ export default function Celular3D({ progresso, midias = [] }) {
 
     const cobrir = (img, iw, ih) => { const s = Math.max(TW / iw, TH / ih), w = iw * s, h = ih * s; g.drawImage(img, (TW - w) / 2, (TH - h) / 2, w, h); };
     const redondo = (x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
+    /* texto que cabe: diminui a fonte até caber; se ainda não couber, corta com "…" */
+    const caber = (txt, peso, max, min, larg) => {
+      txt = String(txt || ''); let t = max;
+      for (; t > min; t -= 2) { g.font = peso + ' ' + t + 'px Sora, Inter, Arial'; if (g.measureText(txt).width <= larg) return txt; }
+      g.font = peso + ' ' + min + 'px Sora, Inter, Arial';
+      return txt;   /* o corte com "…" fica com cortar() */
+    };
+    const cortar = (txt, larg) => { txt = String(txt || ''); if (g.measureText(txt).width <= larg) return txt;
+      while (txt.length > 1 && g.measureText(txt + '…').width > larg) txt = txt.slice(0, -1); return txt + '…'; };
     const coracao = (x, y, s) => { g.beginPath(); g.moveTo(x, y + s * .3); g.bezierCurveTo(x, y, x - s * .5, y, x - s * .5, y + s * .3); g.bezierCurveTo(x - s * .5, y + s * .6, x, y + s * .8, x, y + s);
       g.bezierCurveTo(x, y + s * .8, x + s * .5, y + s * .6, x + s * .5, y + s * .3); g.bezierCurveTo(x + s * .5, y, x, y, x, y + s * .3); g.fill(); };
 
@@ -154,7 +163,8 @@ export default function Celular3D({ progresso, midias = [] }) {
         else if (simbolo) { const s = lado * .5; g.fillStyle = '#5B2BC6'; g.fillRect(lx, ly, lado, lado); g.drawImage(simbolo, lx + (lado - s * .84) / 2, ly + (lado - s) / 2, s * .84, s); }
         g.restore();
         g.globalAlpha = ease; g.fillStyle = '#fff'; g.textAlign = 'center';
-        g.font = '700 46px Sora, Inter, Arial'; g.fillText(m.nome || 'Branding7', TW / 2, TH * .38 + lado / 2 + 90);
+        const nomeT = caber(m.nome || 'Branding7', '700', 46, 30, TW - 70);
+        g.fillText(cortar(nomeT, TW - 70), TW / 2, TH * .38 + lado / 2 + 90);
         g.font = '500 28px Inter, Arial'; g.fillStyle = 'rgba(255,255,255,.8)'; g.fillText('confia na Branding7', TW / 2, TH * .38 + lado / 2 + 136);
         g.globalAlpha = 1;
       }
@@ -177,7 +187,7 @@ export default function Celular3D({ progresso, midias = [] }) {
       if (av) g.drawImage(av, 28, 112, 56, 56); else { g.fillStyle = '#9A2AA8'; g.fillRect(28, 112, 56, 56); }
       g.restore();
       g.textAlign = 'left'; g.fillStyle = '#fff'; g.font = '700 27px Inter, Arial';
-      g.fillText(m.arroba ? '@' + String(m.arroba).replace(/^@/, '') : (m.nome || 'branding7'), 98, 136);
+      g.fillText(cortar(m.arroba ? '@' + String(m.arroba).replace(/^@/, '') : (m.nome || 'branding7'), TW - 130), 98, 136);
       g.font = '500 22px Inter, Arial'; g.fillStyle = 'rgba(255,255,255,.75)'; g.fillText('Vídeo por @b7.agencia', 98, 164);
       /* ações à direita */
       const pulso = 1 + Math.max(0, Math.sin((agora - inicio) / 180)) * .06 * (t < .3 ? 1 : 0);
@@ -191,7 +201,7 @@ export default function Celular3D({ progresso, midias = [] }) {
       g.beginPath(); g.moveTo(TW - 80, TH - 176); g.lineTo(TW - 36, TH - 196); g.lineTo(TW - 52, TH - 152); g.closePath(); g.stroke();
       /* legenda */
       g.textAlign = 'left'; g.font = '600 30px Inter, Arial'; g.fillStyle = '#fff';
-      g.fillText(m.titulo || m.nome || 'Branding7', 28, TH - 150);
+      g.fillText(cortar(m.titulo || m.nome || 'Branding7', TW - 110), 28, TH - 150);
       g.font = '500 24px Inter, Arial'; g.fillStyle = 'rgba(255,255,255,.8)';
       g.fillText('🎬 Roteiro, gravação e edição: Branding7', 28, TH - 110);
       /* barra de casa */
