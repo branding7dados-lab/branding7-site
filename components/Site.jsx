@@ -233,12 +233,11 @@ export default function Site() {
       {/* ============ ABERTURA ============ */}
       <section className="heroi" id="inicio">
         <div className="heroi-fundo" aria-hidden="true">
-          {heroi ? <VideoFundo src={heroi.video_url} capa={heroi.capa_url} /> : <div className="aurora"><i /><i /><i /></div>}
+          <div className="aurora"><i /><i /><i /></div>
+          <MuroReels itens={itens} heroi={heroi} />
           <div className="grao" />
         </div>
-        <div className="marca-gigante" aria-hidden="true">B7</div>
         <Visor />
-        <PilhaReels itens={midiasCelular} />
         <header className="heroi-topo">
           <img src="/marca/logo-white.png" alt="Branding7" width="132" height="52" />
           <a className="topo-link" href={insta} target="_blank" rel="noopener" onClick={insta_}>@{String(cfg.instagram || 'b7.agencia').replace(/^@/, '')}</a>
@@ -273,24 +272,21 @@ export default function Site() {
       </section>
 
       {/* ============ SOBRE (claro) ============ */}
-      {mostra('sobre') && <section className="sobre">
-        <div className="lim sobre-in">
-          <div className="sobre-esq">
-            <div className="sobre-cartao aparece">
+      {mostra('sobre') && <section className="sobre" id="sobre">
+        <div className="lim sobre-novo">
+          <div className="sobre-topo aparece">
+            <span className="sobre-cartao">
               <span className="sobre-av"><img src="/marca/symbol-white.png" alt="" width="40" height="47" /></span>
               <span><b>Branding7</b><small>Vídeo, criativos e marketing digital</small></span>
-            </div>
-            <SeloGiro />
-            <FilaReels itens={midiasCelular} />
+            </span>
+            <span className="sobre-linha" />
           </div>
-          <div className="sobre-tx">
-            <h2 className="aparece">{cfg.sobre_titulo ? cfg.sobre_titulo : <>Muito além de <em>gravar um vídeo</em>.</>}</h2>
-            <div className="sobre-cols">
-              {sobreTexto ? sobreTexto.map((t, k) => <p className="aparece" key={k}>{t}</p>) : <>
-              <p className="aparece">Na Branding7, cada vídeo nasce de uma estratégia: quem vai assistir, o que precisa sentir e o que tem que fazer depois. Roteiro, gravação e edição trabalham juntos para isso.</p>
-              <p className="aparece">O resultado é conteúdo que a sua marca tem orgulho de postar e que faz o cliente chamar no WhatsApp.</p></>}
-            </div>
+          <h2 className="sobre-titulo aparece">{cfg.sobre_titulo ? cfg.sobre_titulo : <>Muito além de <em>gravar um vídeo</em>.</>}</h2>
+          <TextoAcende paragrafos={sobreTexto || ['Na Branding7, cada vídeo nasce de uma estratégia: quem vai assistir, o que precisa sentir e o que tem que fazer depois. Roteiro, gravação e edição trabalham juntos para isso.',
+            'O resultado é conteúdo que a sua marca tem orgulho de postar e que faz o cliente chamar no WhatsApp.']} />
+          <div className="sobre-pe aparece">
             <Botao href={wpp} alvo onClick={() => evento('Contact', { canal: 'whatsapp' })}>{cta}</Botao>
+            <span className="sobre-selos"><span>Roteiro</span><span>Gravação</span><span>Edição</span><span>Anúncios</span></span>
           </div>
         </div>
       </section>}
@@ -579,6 +575,64 @@ function Obras({ videos, abrir, insta, insta_ }) {
   );
 }
 
+/* abertura: muro de Reels em 3D — colunas que sobem e descem em
+   velocidades diferentes; ao rolar, o muro endireita e se afasta (--hy) */
+function MuroReels({ itens, heroi }) {
+  const [cols, setCols] = useState(6);
+  useEffect(() => { const f = () => setCols(innerWidth < 640 ? 4 : innerWidth < 1100 ? 5 : 7); f(); addEventListener('resize', f); return () => removeEventListener('resize', f); }, []);
+  const capas = itens.filter(i => (i.tipo === 'video' || i.tipo === 'depoimento') && (i.capa_url || tipoLink(i.video_url) === 'arquivo'))
+    .map(i => i.capa_url ? { capa: i.capa_url } : { video: i.video_url });
+  if (heroi && !capas.some(c => c.video === heroi.video_url)) capas.unshift({ video: heroi.video_url });
+  const logos = itens.filter(i => i.tipo === 'cliente' && i.capa_url).map(i => ({ logo: i.capa_url, nome: i.cliente_nome }));
+  if (!capas.length && !logos.length) return null;
+  /* cada coluna mistura capas e logos, começando de um ponto diferente */
+  const base = [];
+  const n = Math.max(capas.length, Math.ceil(logos.length / 2), 3);
+  for (let k = 0; k < n; k++) { if (capas.length) base.push(capas[k % capas.length]); if (logos.length) base.push(logos[(k * 2) % logos.length]); if (logos.length > 1) base.push(logos[(k * 2 + 1) % logos.length]); }
+  const porCol = 6;
+  return (
+    <div className="muro" aria-hidden="true">
+      <div className="muro-plano">
+        {Array.from({ length: cols }).map((_, c) => {
+          const lista = Array.from({ length: porCol }).map((_, j) => base[(c * 3 + j * (c % 2 ? 2 : 1)) % base.length]);
+          return (
+            <div className="muro-col" key={c} style={{ '--dur': (38 + (c % 3) * 9) + 's', '--dir': c % 2 ? 'reverse' : 'normal', '--y': (c % 3) * -9 + '%' }}>
+              <div className="muro-in">{[0, 1].map(r => lista.map((t, j) => (
+                <div className={'muro-t' + (t.logo ? ' logo' : '')} key={r + '-' + j}>
+                  {t.video ? <video src={t.video} muted loop autoPlay playsInline preload="metadata" />
+                    : t.capa ? <img src={t.capa} alt="" decoding="async" />
+                    : <img src={t.logo} alt="" decoding="async" />}
+                </div>)))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* sobre: o texto "acende" palavra por palavra conforme a rolagem */
+function TextoAcende({ paragrafos }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { el.style.setProperty('--ap', 1); return; }
+    let raf = 0;
+    const medir = () => { raf = 0; const r = el.getBoundingClientRect();
+      el.style.setProperty('--ap', Math.min(1, Math.max(0, (innerHeight * .85 - r.top) / (r.height + innerHeight * .35))).toFixed(4)); };
+    const pedir = () => { if (!raf) raf = requestAnimationFrame(medir); };
+    addEventListener('scroll', pedir, { passive: true }); medir();
+    return () => { removeEventListener('scroll', pedir); cancelAnimationFrame(raf); };
+  }, [paragrafos.join('|')]);
+  const total = paragrafos.join(' ').split(/\s+/).length; let n = 0;
+  return (
+    <div className="acende" ref={ref}>
+      {paragrafos.map((p, k) => <p key={k}>{p.split(/\s+/).map((w, j) => <span key={j} style={{ '--i': n++, '--n': total }}>{w} </span>)}</p>)}
+    </div>
+  );
+}
+
 /* cartão vertical de Reels: vídeo (arquivo) ou o logo do cliente */
 function Reel({ m, ativo }) {
   const v = useRef(null);
@@ -600,47 +654,6 @@ function Reel({ m, ativo }) {
         <span className="reel-leg">{m.nome}</span>
       </div>
     </div>
-  );
-}
-
-/* abertura: Reels em leque que se revezam */
-function PilhaReels({ itens }) {
-  const [i, setI] = useState(0);
-  const n = itens.length;
-  useEffect(() => {
-    if (n < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const t = setInterval(() => { if (!document.hidden) setI(x => x + 1); }, 3200);
-    return () => clearInterval(t);
-  }, [n]);
-  if (!n) return null;
-  const vis = Math.min(n, 4);
-  return (
-    <div className="pilha inclina" aria-hidden="true">
-      {itens.map((m, k) => {
-        const pos = ((k - i) % n + n) % n;
-        if (pos >= vis) return null;
-        return <div key={k} className="pilha-c" data-pos={pos}><Reel m={m} ativo={pos === 0} /></div>;
-      })}
-    </div>
-  );
-}
-
-/* sobre: fila de Reels que sobe devagar */
-function FilaReels({ itens }) {
-  if (!itens.length) return null;
-  const l = itens.slice(0, 8);
-  return <div className="fila-reels" aria-hidden="true"><div className="fila-in">{[0, 1].map(r => l.map((m, k) => <Reel key={r + '-' + k} m={m} />))}</div></div>;
-}
-
-/* selo girando */
-function SeloGiro() {
-  return (
-    <svg className="selo-giro" viewBox="0 0 200 200" aria-hidden="true">
-      <defs><path id="selo-c" d="M100,100 m-74,0 a74,74 0 1,1 148,0 a74,74 0 1,1 -148,0" /></defs>
-      <g className="selo-txt"><text><textPath href="#selo-c">VÍDEO ✦ CRIATIVOS ✦ ROTEIRO ✦ EDIÇÃO ✦ PERFORMANCE ✦ </textPath></text></g>
-      <circle cx="100" cy="100" r="40" />
-      <image href="/marca/symbol-white.png" x="84" y="80" width="32" height="38" />
-    </svg>
   );
 }
 
