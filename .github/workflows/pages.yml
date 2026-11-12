@@ -1,0 +1,40 @@
+# Monta o site (Next.js, exportação estática) e publica no GitHub Pages
+# a cada envio na main. Pages → Source: "GitHub Actions".
+name: Site
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  montar:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx next build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+      - run: test -f out/index.html && test -f out/CNAME
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+  publicar:
+    needs: montar
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
