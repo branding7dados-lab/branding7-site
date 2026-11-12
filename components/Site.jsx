@@ -298,8 +298,8 @@ export default function Site() {
           <p className="rotulo centro">Marcas que confiam na Branding7</p>
           <div className="clientes-faixa"><div className="clientes-in">
             {[0, 1].map(r => clientes.map(c => c.capa_url
-              ? <img key={r + c.id} src={c.capa_url} alt={r ? '' : (c.cliente_nome || c.titulo || '')} loading="lazy" />
-              : <span key={r + c.id}>{c.cliente_nome || c.titulo}</span>))}
+              ? <figure className="cli-logo" key={r + c.id} title={c.cliente_nome || c.titulo || ''}><img src={c.capa_url} alt={r ? '' : (c.cliente_nome || c.titulo || '')} /></figure>
+              : <span className="cli-nome" key={r + c.id}>{c.cliente_nome || c.titulo}</span>))}
           </div></div>
         </section>
       )}
