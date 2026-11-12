@@ -80,7 +80,9 @@ export default function Site() {
     const medir = () => {
       raf = 0;
       const r = sec.getBoundingClientRect(), total = r.height - innerHeight;
-      const p = Math.min(1, Math.max(0, -r.top / Math.max(1, total)));
+      const cel = matchMedia('(max-width: 640px)').matches;
+      const p = cel ? Math.min(1, Math.max(0, (innerHeight - r.top) / (innerHeight + r.height)))
+                    : Math.min(1, Math.max(0, -r.top / Math.max(1, total)));
       sec.style.setProperty('--p', p.toFixed(4));
       sec.dataset.fase = p < .28 ? '0' : '1';
     };
@@ -182,6 +184,8 @@ export default function Site() {
 
       {/* ============ TRABALHOS (empilham ao rolar) ============ */}
       <section className="trabalhos" id="trabalhos">
+        {videos.length > 0 && <div className="trabalhos-cab lim"><p className="rotulo">Projetos selecionados</p><h2>Vídeos que já estão <em>fazendo resultado</em>.</h2><p className="trabalhos-dica">Arraste para o lado →</p></div>}
+        <div className="trabalhos-trilho">
         {videos.length > 0 ? videos.slice(0, 8).map((v, k, arr) => (
           <article className="projeto" key={v.id} style={{ '--k': k }}>
             <div className="projeto-cx">
@@ -205,6 +209,7 @@ export default function Site() {
             <Botao href={insta} alvo>Ver no Instagram</Botao>
           </div>
         )}
+        </div>
       </section>
 
       {/* ============ PROCESSO (preso na rolagem) ============ */}
@@ -312,6 +317,8 @@ export default function Site() {
           <small>© {new Date().getFullYear()} Branding7 · Núcleo7</small>
         </div>
       </footer>
+
+      <MenuCelular wpp={wpp} insta={insta} />
 
       {/* navegação em pílula flutuante */}
       <nav className="pilula-nav" aria-label="Principal">
@@ -438,5 +445,35 @@ function Visor() {
       <span className="v-info">4K · 30p · 16-50mm</span>
       <span className="v-mira" />
     </div>
+  );
+}
+
+/* celular: topo de vidro com menu em tela cheia + barra de ações embaixo */
+function MenuCelular({ wpp, insta }) {
+  const [aberto, setAberto] = useState(false);
+  const [rolou, setRolou] = useState(false);
+  useEffect(() => {
+    const f = () => setRolou(scrollY > innerHeight * .6);
+    addEventListener('scroll', f, { passive: true }); f();
+    return () => removeEventListener('scroll', f);
+  }, []);
+  useEffect(() => { document.documentElement.classList.toggle('menu-aberto', aberto); }, [aberto]);
+  const ir = () => setAberto(false);
+  return (
+    <>
+      <header className={'cel-topo' + (rolou || aberto ? ' visivel' : '')}>
+        <a href="#inicio" onClick={ir}><img src="/marca/logo-white.png" alt="Branding7" width="102" height="40" /></a>
+        <button className={'cel-menu-bt' + (aberto ? ' x' : '')} aria-label={aberto ? 'Fechar menu' : 'Abrir menu'} aria-expanded={aberto} onClick={() => setAberto(a => !a)}><i /><i /></button>
+      </header>
+      <nav className={'cel-menu' + (aberto ? ' aberto' : '')} aria-hidden={!aberto}>
+        {[['inicio', 'Início'], ['trabalhos', 'Trabalhos'], ['processo', 'Processo'], ['servicos', 'Serviços'], ['contato', 'Contato']].map(([id, rot], k) =>
+          <a key={id} href={'#' + id} onClick={ir} style={{ '--k': k }}><small>0{k + 1}</small>{rot}</a>)}
+        <div className="cel-menu-pe"><a href={insta} target="_blank" rel="noopener">Instagram</a><a href="https://sistema.branding7.com.br/">Área do cliente</a></div>
+      </nav>
+      <div className="cel-acoes">
+        <a className="cel-zap" href={wpp} target="_blank" rel="noopener" onClick={() => evento('Contact', { canal: 'whatsapp' })}><Zap />WhatsApp</a>
+        <a className="cel-orc" href="#contato">Orçamento<Seta /></a>
+      </div>
+    </>
   );
 }
