@@ -219,12 +219,13 @@ export default function Site() {
         </div>
         <div className="marca-gigante" aria-hidden="true">B7</div>
         <Visor />
+        <PilhaReels itens={midiasCelular} />
         <header className="heroi-topo">
           <img src="/marca/logo-white.png" alt="Branding7" width="132" height="52" />
           <a className="topo-link" href={insta} target="_blank" rel="noopener" onClick={insta_}>@{String(cfg.instagram || 'b7.agencia').replace(/^@/, '')}</a>
         </header>
         <div className="heroi-base">
-          <h1>O vídeo que faz<br />você <Giro palavras={palavras} />.</h1>
+          <h1><span className="h1-l"><span>O vídeo que faz</span></span><span className="h1-l"><span>você <Giro palavras={palavras} />.</span></span></h1>
           <div className="heroi-lado">
             <p>{cfg.subtitulo}</p>
             <div className="heroi-acoes">
@@ -255,9 +256,13 @@ export default function Site() {
       {/* ============ SOBRE (claro) ============ */}
       {mostra('sobre') && <section className="sobre">
         <div className="lim sobre-in">
-          <div className="sobre-cartao aparece">
-            <span className="sobre-av"><img src="/marca/symbol-white.png" alt="" width="40" height="47" /></span>
-            <span><b>Branding7</b><small>Vídeo, criativos e marketing digital</small></span>
+          <div className="sobre-esq">
+            <div className="sobre-cartao aparece">
+              <span className="sobre-av"><img src="/marca/symbol-white.png" alt="" width="40" height="47" /></span>
+              <span><b>Branding7</b><small>Vídeo, criativos e marketing digital</small></span>
+            </div>
+            <SeloGiro />
+            <FilaReels itens={midiasCelular} />
           </div>
           <div className="sobre-tx">
             <h2 className="aparece">{cfg.sobre_titulo ? cfg.sobre_titulo : <>Muito além de <em>gravar um vídeo</em>.</>}</h2>
@@ -296,6 +301,7 @@ export default function Site() {
             <p className="rotulo">Projetos selecionados</p>
             <h2>Os vídeos dos nossos clientes <em>estão chegando aqui</em>.</h2>
             <Botao href={insta} alvo onClick={insta_}>Ver no Instagram</Botao>
+            {midiasCelular.length > 0 && <div className="trilho-reels" aria-hidden="true"><div className="trilho-in">{[0, 1].map(r => midiasCelular.map((m, k) => <Reel key={r + '-' + k} m={m} />))}</div></div>}
           </div>
         )}
         </div>
@@ -517,6 +523,70 @@ function rastreadores(cfg) {
 }
 
 /* cantos de visor, REC piscando e o tempo correndo na abertura */
+/* cartão vertical de Reels: vídeo (arquivo) ou o logo do cliente */
+function Reel({ m, ativo }) {
+  const v = useRef(null);
+  useEffect(() => {
+    const el = v.current; if (!el) return;
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) el.play().catch(() => {}); else el.pause(); }, { threshold: .2 });
+    io.observe(el); return () => io.disconnect();
+  }, [m && m.video]);
+  if (!m) return null;
+  return (
+    <div className={'reel' + (ativo ? ' ativo' : '')}>
+      {m.video ? <video ref={v} src={m.video} muted loop playsInline preload="metadata" />
+        : <div className="reel-logo"><img src={m.logo || '/marca/symbol-white.png'} alt="" /></div>}
+      <div className="reel-ui">
+        <span className="reel-barra"><i /></span>
+        <span className="reel-quem"><b>{m.arroba ? '@' + String(m.arroba).replace(/^@/, '') : m.nome}</b></span>
+        <span className="reel-acoes"><i className="c" /><i /><i /></span>
+        <span className="reel-leg">{m.nome}</span>
+      </div>
+    </div>
+  );
+}
+
+/* abertura: Reels em leque que se revezam */
+function PilhaReels({ itens }) {
+  const [i, setI] = useState(0);
+  const n = itens.length;
+  useEffect(() => {
+    if (n < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const t = setInterval(() => { if (!document.hidden) setI(x => x + 1); }, 3200);
+    return () => clearInterval(t);
+  }, [n]);
+  if (!n) return null;
+  const vis = Math.min(n, 4);
+  return (
+    <div className="pilha inclina" aria-hidden="true">
+      {itens.map((m, k) => {
+        const pos = ((k - i) % n + n) % n;
+        if (pos >= vis) return null;
+        return <div key={k} className="pilha-c" data-pos={pos}><Reel m={m} ativo={pos === 0} /></div>;
+      })}
+    </div>
+  );
+}
+
+/* sobre: fila de Reels que sobe devagar */
+function FilaReels({ itens }) {
+  if (!itens.length) return null;
+  const l = itens.slice(0, 8);
+  return <div className="fila-reels" aria-hidden="true"><div className="fila-in">{[0, 1].map(r => l.map((m, k) => <Reel key={r + '-' + k} m={m} />))}</div></div>;
+}
+
+/* selo girando */
+function SeloGiro() {
+  return (
+    <svg className="selo-giro" viewBox="0 0 200 200" aria-hidden="true">
+      <defs><path id="selo-c" d="M100,100 m-74,0 a74,74 0 1,1 148,0 a74,74 0 1,1 -148,0" /></defs>
+      <g className="selo-txt"><text><textPath href="#selo-c">VÍDEO ✦ CRIATIVOS ✦ ROTEIRO ✦ EDIÇÃO ✦ PERFORMANCE ✦ </textPath></text></g>
+      <circle cx="100" cy="100" r="40" />
+      <image href="/marca/symbol-white.png" x="84" y="80" width="32" height="38" />
+    </svg>
+  );
+}
+
 function Visor() {
   const [tc, setTc] = useState('00:00:00:00');
   useEffect(() => {
