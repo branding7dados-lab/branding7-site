@@ -2,8 +2,12 @@
 /* Branding7 — página única. Linguagem de cinema: abertura em tela cheia
    com a marca gigante, projetos em tela cheia que empilham ao rolar,
    processo preso na rolagem e navegação em pílula flutuante. */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { carregar, CFG_PADRAO, SERVICOS_PADRAO, linkWpp, tipoLink, embed, enviarLead, origemDaVisita, evento } from '@/lib/dados';
+
+/* a câmera 3D chega só no navegador e só quando a página já abriu */
+const Camera3D = dynamic(() => import('./Camera3D'), { ssr: false });
 
 const Seta = () => (<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>);
 const Zap = () => (<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.2a9.7 9.7 0 0 0-8.4 14.6L2.3 21.6l4.9-1.3A9.8 9.8 0 1 0 12 2.2zm4.4 11.8c-.2-.1-1.4-.7-1.7-.8-.2-.1-.4-.1-.5.1l-.8.9c-.1.2-.3.2-.5.1a6.6 6.6 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.7-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 2s.8 2.3.9 2.5c.1.2 1.6 2.5 4 3.5 1.5.6 2 .7 2.8.6.4-.1 1.4-.6 1.6-1.1.2-.5.2-1 .1-1.1l-.4-.2z" /></svg>);
@@ -85,6 +89,11 @@ export default function Site() {
     return () => { removeEventListener('scroll', pedir); removeEventListener('resize', pedir); cancelAnimationFrame(raf); };
   }, []);
 
+  const progressoProcesso = useCallback(() => {
+    const sec = typeof document !== 'undefined' && document.getElementById('processo');
+    return sec ? parseFloat(sec.style.getPropertyValue('--p')) || 0 : 0;
+  }, []);
+
   const abrir = u => {
     if (!u) return;
     if (tipoLink(u) !== 'arquivo' && !embed(u)) { window.open(u, '_blank', 'noopener'); return; }
@@ -121,6 +130,7 @@ export default function Site() {
           <div className="grao" />
         </div>
         <div className="marca-gigante" aria-hidden="true">B7</div>
+        <Visor />
         <header className="heroi-topo">
           <img src="/marca/logo-white.png" alt="Branding7" width="132" height="52" />
           <a className="topo-link" href={insta} target="_blank" rel="noopener">@{String(cfg.instagram || 'b7.agencia').replace(/^@/, '')}</a>
@@ -203,7 +213,7 @@ export default function Site() {
           <div className="processo-ceu" aria-hidden="true" />
           <p className="rotulo centro">Processo de criação</p>
           <h2 className="processo-titulo" aria-label="Do roteiro ao resultado: seis passos">DO ROTEIRO<br />AO RESULTADO<br /><em>SEIS PASSOS</em></h2>
-          <div className="processo-centro" aria-hidden="true"><img src="/marca/symbol-white.png" alt="" width="199" height="236" /></div>
+          <div className="processo-centro"><Camera3D progresso={progressoProcesso} /></div>
           <ol className="processo-passos">
             {PASSOS.map(([t, d], k) => (
               <li key={t} style={{ '--k': k }}><span>{String(k + 1).padStart(2, '0')}</span><b>{t}</b><p>{d}</p></li>
@@ -406,4 +416,27 @@ function rastreadores(cfg) {
     window.dataLayer = window.dataLayer || []; window.gtag = function () { window.dataLayer.push(arguments); };
     window.gtag('js', new Date()); window.gtag('config', ga);
   }
+}
+
+/* cantos de visor, REC piscando e o tempo correndo na abertura */
+function Visor() {
+  const [tc, setTc] = useState('00:00:00:00');
+  useEffect(() => {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const t0 = performance.now();
+    const t = setInterval(() => {
+      const s = (performance.now() - t0) / 1000, f = Math.floor((s % 1) * 30);
+      setTc('00:' + String(Math.floor(s / 60) % 60).padStart(2, '0') + ':' + String(Math.floor(s) % 60).padStart(2, '0') + ':' + String(f).padStart(2, '0'));
+    }, 1000 / 15);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className="visor" aria-hidden="true">
+      <i className="v-c v1" /><i className="v-c v2" /><i className="v-c v3" /><i className="v-c v4" />
+      <span className="v-rec"><b />REC</span>
+      <span className="v-tc">{tc}</span>
+      <span className="v-info">4K · 30p · 16-50mm</span>
+      <span className="v-mira" />
+    </div>
+  );
 }
