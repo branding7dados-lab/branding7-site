@@ -363,7 +363,24 @@ export default function Site() {
             <p className="rotulo aparece">Depoimentos</p>
             <h2 className="aparece">Quem fez, <em>recomenda</em>.</h2>
             <div className="depo-lista">
-              {depo.map(d => d.video_url ? (
+              {depo.map(d => d.video_url && d.texto ? (
+                /* vídeo + a fala do cliente lado a lado */
+                <figure className="depo-combo aparece" key={d.id}>
+                  <button className="depo-video" onClick={() => abrir(d.video_url)} aria-label={'Ver o depoimento de ' + (d.cliente_nome || '')}>
+                    <VideoFundo src={d.video_url} capa={d.capa_url} />
+                    <span className="depo-play"><Play /></span>
+                  </button>
+                  <div className="depo-combo-tx">
+                    <span className="depo-cta-aspas" aria-hidden="true">“</span>
+                    <blockquote>{d.texto}</blockquote>
+                    <figcaption>
+                      <span className="depo-av">{d.avatar_url ? <img src={d.avatar_url} alt="" /> : (d.cliente_nome || '?').charAt(0)}</span>
+                      <span><b>{d.cliente_nome}</b><small>{d.cliente_arroba ? '@' + String(d.cliente_arroba).replace(/^@/, '') : (d.titulo || 'Cliente Branding7')}</small></span>
+                    </figcaption>
+                    <button className="depo-assistir" onClick={() => abrir(d.video_url)}><i><Play /></i>Assistir o depoimento</button>
+                  </div>
+                </figure>
+              ) : d.video_url ? (
                 <button className="depo-video aparece" key={d.id} onClick={() => abrir(d.video_url)}>
                   <VideoFundo src={d.video_url} capa={d.capa_url} />
                   <span className="depo-play"><Play /></span>

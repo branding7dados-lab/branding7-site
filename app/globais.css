@@ -784,6 +784,37 @@ html.cursor-cine .cursor-cine-el{display:block;}
   .depo-cta{min-height:300px;}
 }
 
+/* depoimentos lado a lado com larguras próprias (o cartão com vídeo + fala é mais largo) */
+@media (min-width:641px){
+  .depo-lista{display:flex !important;flex-wrap:wrap;gap:18px;}
+  .depo-lista > .depo-video{flex:0 0 260px;}
+  .depo-lista > .depo-tx{flex:1 1 300px;max-width:420px;}
+  .depo-lista > .depo-combo{flex:1 1 640px;max-width:860px;grid-template-columns:minmax(220px,290px) 1fr;}
+  .depo-lista > .depo-cta{flex:0 0 290px;}
+}
+/* depoimento com vídeo + texto: um cartão largo, vídeo à esquerda e a fala à direita */
+.depo-combo{grid-column:span 2;display:grid;grid-template-columns:minmax(200px,250px) 1fr;gap:0;margin:0;border-radius:24px;overflow:hidden;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);min-height:420px;}
+.depo-combo .depo-video{border-radius:0;min-height:100%;aspect-ratio:auto;}
+.depo-combo-tx{position:relative;display:flex;flex-direction:column;justify-content:flex-end;gap:20px;padding:30px 30px 28px;}
+.depo-combo-tx .depo-cta-aspas{position:static;display:block;height:.42em;margin:0 0 -6px;font-size:110px;line-height:.9;}
+.depo-combo-tx blockquote{margin:0;font:400 clamp(19px,1.7vw,25px)/1.42 'Sora',sans-serif;letter-spacing:-.015em;color:var(--tx);}
+.depo-combo-tx figcaption{display:flex;align-items:center;gap:12px;}
+.depo-combo-tx figcaption b{display:block;font-family:'Sora',sans-serif;}
+.depo-combo-tx figcaption small{color:var(--tx-3);font-size:13px;}
+.depo-av img{width:100%;height:100%;object-fit:cover;border-radius:50%;background:#fff;}
+.depo-av{overflow:hidden;flex:none;}
+.depo-assistir{align-self:flex-start;display:inline-flex;align-items:center;gap:10px;height:42px;padding:0 16px 0 5px;border-radius:99px;border:1px solid rgba(255,255,255,.18);
+  background:transparent;color:#fff;font:600 13.5px 'Inter',sans-serif;cursor:pointer;transition:background .25s;}
+.depo-assistir:hover{background:rgba(255,255,255,.08);}
+.depo-assistir i{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--grad);}
+.depo-assistir svg{width:12px;height:12px;margin-left:2px;}
+@media (max-width:640px){
+  .depo-combo{grid-column:auto;grid-template-columns:1fr;min-height:0;}
+  .depo-combo .depo-video{aspect-ratio:9/14;}
+  .depo-combo-tx{padding:26px 22px 24px;}
+}
+
 /* nada vaza para os lados: no celular o navegador alargava a página e
    empurrava a barra de baixo e o menu para fora da tela */
 html,body{overflow-x:clip;max-width:100%;}
