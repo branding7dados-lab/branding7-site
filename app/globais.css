@@ -824,6 +824,59 @@ html{scrollbar-width:thin;scrollbar-color:#7b3fd1 #06030f;}
 ::-webkit-scrollbar-button{display:none;width:0;height:0;}
 ::-webkit-scrollbar-corner{background:#06030f;}
 
+/* ====================== NÚMEROS ====================== */
+.numeros{padding:90px 0;background:var(--preto);border-block:1px solid var(--borda);}
+.numeros-in{display:grid;grid-template-columns:repeat(4,1fr);gap:30px;}
+.numero{position:relative;padding-left:22px;}
+.numero::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:2px;border-radius:2px;background:var(--grad);}
+.numero b{display:block;font:700 clamp(46px,5.6vw,84px)/1 'Sora',sans-serif;letter-spacing:-.05em;background:var(--grad-tx);-webkit-background-clip:text;background-clip:text;color:transparent;font-variant-numeric:tabular-nums;}
+.numero small{display:block;margin-top:10px;font-size:15px;color:var(--tx-2);}
+@media (max-width:900px){ .numeros-in{grid-template-columns:1fr 1fr;gap:34px 20px;} }
+@media (max-width:640px){ .numeros{padding:64px 0;} .numeros-in{padding:0 4px;} .numero small{font-size:13.5px;} }
+
+/* ====================== PLAYER ESTILO REELS ====================== */
+.player{display:flex !important;align-items:center;justify-content:center;gap:18px;}
+.player-palco{display:flex;align-items:center;gap:28px;max-height:calc(100vh - 60px);animation:surge .35s ease both;}
+.player-palco .player-cx{flex:none;height:min(86vh,760px);width:auto;aspect-ratio:9/16;max-height:none;}
+.player-info{width:330px;display:flex;flex-direction:column;gap:14px;color:var(--tx);}
+.player-n{font:600 12px 'Inter',sans-serif;letter-spacing:.14em;color:var(--tx-3);}
+.player-quem{display:flex;align-items:center;gap:12px;}
+.player-quem img{width:46px;height:46px;border-radius:50%;object-fit:cover;background:#fff;}
+.player-quem b{display:block;font:600 22px/1.15 'Sora',sans-serif;letter-spacing:-.02em;}
+.player-quem small{color:var(--tx-3);}
+.player-tit{margin:0;color:var(--tx-2);font-size:15px;}
+.player-depo{margin:0;font:400 17px/1.45 'Sora',sans-serif;color:var(--tx);}
+.player-info .obra-num span{font-size:14px;}
+.player-info .pilula{align-self:flex-start;margin-top:6px;}
+.player-seta{flex:none;width:56px;height:56px;border-radius:50%;border:1px solid var(--borda);background:rgba(255,255,255,.06);color:#fff;cursor:pointer;display:grid;place-items:center;transition:background .25s,transform .25s;}
+.player-seta:hover{background:rgba(255,255,255,.14);transform:scale(1.06);}
+.player-seta svg{width:20px;height:20px;}
+.player-seta.ant svg{transform:rotate(-135deg);}
+.player-seta.prox svg{transform:rotate(45deg);}
+@media (max-width:900px){
+  .player{flex-direction:column;padding:12px;}
+  .player-palco{flex-direction:column;gap:12px;overflow-y:auto;max-height:100%;padding-top:52px;}
+  .player-palco .player-cx{height:auto;width:min(100%,380px);}
+  .player-info{width:min(100%,380px);gap:10px;}
+  .player-seta{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom));width:48px;height:48px;z-index:2;background:rgba(14,9,32,.92);}
+  .player-seta.ant{left:16px;} .player-seta.prox{right:16px;}
+}
+
+/* ====================== BALÃO DO WHATSAPP ====================== */
+.balao-wpp{position:fixed;right:24px;bottom:104px;z-index:70;width:300px;animation:balaoEntra .6s cubic-bezier(.3,1.4,.5,1) both;}
+@keyframes balaoEntra{from{opacity:0;transform:translateY(16px) scale(.92)}}
+.balao-wpp a{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:18px 18px 4px 18px;background:#fff;color:#14092e;
+  box-shadow:0 24px 50px -20px rgba(0,0,0,.6);text-decoration:none;}
+.balao-av{position:relative;flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font:700 16px 'Sora',sans-serif;color:#fff;background:var(--grad);}
+.balao-av i{position:absolute;right:0;bottom:0;width:11px;height:11px;border-radius:50%;background:#25d366;border:2px solid #fff;}
+.balao-wpp b{display:block;font:700 13.5px 'Inter',sans-serif;}
+.balao-wpp small{display:block;margin-top:3px;font-size:13.5px;line-height:1.4;color:#4a4060;}
+.balao-x{position:absolute;top:-10px;right:-8px;width:26px;height:26px;border-radius:50%;border:0;background:#14092e;color:#fff;font-size:16px;line-height:1;cursor:pointer;z-index:1;}
+@media (max-width:640px){ .balao-wpp{right:12px;left:12px;width:auto;bottom:calc(92px + env(safe-area-inset-bottom));} }
+
+/* título da abertura no celular: menor, sem palavra sozinha */
+@media (max-width:640px){ .heroi h1{font-size:10.6vw !important;max-width:none;} }
+
 /* nada vaza para os lados: no celular o navegador alargava a página e
    empurrava a barra de baixo e o menu para fora da tela */
 html,body{overflow-x:clip;max-width:100%;}

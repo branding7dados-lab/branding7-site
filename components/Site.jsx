@@ -52,7 +52,8 @@ export default function Site() {
   const [player, setPlayer] = useState(null);
   const [ativo, setAtivo] = useState('inicio');
 
-  useEffect(() => { carregar().then(({ cfg, itens }) => { setCfg(cfg); setItens(itens); rastreadores(cfg); }); }, []);
+  const [numAuto, setNumAuto] = useState(null);
+  useEffect(() => { carregar().then(({ cfg, itens, numeros }) => { setCfg(cfg); setItens(itens); setNumAuto(numeros); rastreadores(cfg); }); }, []);
 
   /* contagem própria: visita e "engajou" (rolou metade da página) */
   useEffect(() => {
@@ -75,7 +76,15 @@ export default function Site() {
   const wpp = useMemo(() => linkWpp(cfg), [cfg]);
   const insta = 'https://www.instagram.com/' + String(cfg.instagram || 'b7.agencia').replace(/^@/, '') + '/';
   const regioes = (cfg.regioes || []).filter(Boolean);
-  const numeros = (cfg.numeros || []).filter(n => n && n.valor);
+  /* números: os digitados em Site → Página; sem eles, os reais do sistema */
+  const redondo = n => n >= 100 ? '+' + Math.floor(n / 10) * 10 : n > 0 ? '+' + n : null;
+  const numerosManuais = (cfg.numeros || []).filter(n => n && n.valor);
+  const numeros = numerosManuais.length ? numerosManuais : numAuto ? [
+    { valor: redondo(numAuto.videos), rotulo: 'vídeos editados e entregues' },
+    { valor: redondo(numAuto.posts), rotulo: 'posts publicados' },
+    { valor: redondo(numAuto.artes), rotulo: 'artes criadas' },
+    { valor: numAuto.marcas > 0 ? String(numAuto.marcas) : null, rotulo: 'marcas atendidas agora' }
+  ].filter(n => n.valor) : [];
   /* tela do celular 3D: vídeos enviados (arquivo) e, depois, os clientes do site */
   const midiasCelular = useMemo(() => {
     const vids = itens.filter(i => (i.tipo === 'video' || i.tipo === 'depoimento') && (tipoLink(i.video_url) === 'arquivo' || i.capa_url))
@@ -173,7 +182,7 @@ export default function Site() {
     document.querySelectorAll('[data-conta]').forEach(el => io.observe(el));
     return () => { removeEventListener('scroll', pedir); removeEventListener('resize', pedir); cancelAnimationFrame(raf); io.disconnect(); ioFora.disconnect();
       document.removeEventListener('pointermove', mover); document.removeEventListener('pointerout', sair); };
-  }, [itens, cfg]);
+  }, [itens, cfg, numAuto]);
 
   /* links internos (#contato, #trabalhos...) rolam até a seção sem deixar
      o "#..." na barra de endereço */
@@ -217,16 +226,23 @@ export default function Site() {
     return sec ? parseFloat(sec.style.getPropertyValue('--p')) || 0 : 0;
   }, []);
 
+  /* player estilo Reels: abre a lista de vídeos do site e passa com seta,
+     teclado ou deslizando; mostra cliente, números e o botão de orçamento */
+  const tocaveis = useMemo(() => itens.filter(i => (i.tipo === 'video' || i.tipo === 'depoimento') && i.video_url &&
+    (tipoLink(i.video_url) === 'arquivo' || embed(i.video_url))), [itens]);
   const abrir = u => {
     if (!u) return;
     if (tipoLink(u) !== 'arquivo' && !embed(u)) { window.open(u, '_blank', 'noopener'); return; }
-    setPlayer(u); evento('ViewContent', { tipo: 'video' });
+    const k = tocaveis.findIndex(i => i.video_url === u);
+    setPlayer(k >= 0 ? { i: k } : { url: u }); evento('ViewContent', { tipo: 'video' });
   };
+  const passar = d => setPlayer(p => p && p.i != null && tocaveis.length ? { i: (p.i + d + tocaveis.length) % tocaveis.length } : p);
   useEffect(() => {
+    if (window.__lenis) { player ? window.__lenis.stop() : window.__lenis.start(); }
     document.body.style.overflow = player ? 'hidden' : '';
-    const k = e => { if (e.key === 'Escape') setPlayer(null); };
+    const k = e => { if (e.key === 'Escape') setPlayer(null); if (e.key === 'ArrowRight' || e.key === 'ArrowDown') passar(1); if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') passar(-1); };
     addEventListener('keydown', k); return () => removeEventListener('keydown', k);
-  }, [player]);
+  }, [player, tocaveis.length]);
 
   const PASSOS = (Array.isArray(cfg.passos) && cfg.passos.length) ? cfg.passos.slice(0, 6).map(x => [x.t, x.d]) : [
     ['Diagnóstico', 'Entendemos o seu negócio, o seu público e o que precisa vender.'],
@@ -288,8 +304,22 @@ export default function Site() {
         </div>
         {notas[0] && <p className="nota n1 aparece">{notas[0]}</p>}
         {notas[1] && <p className="nota n2 aparece">{notas[1]}</p>}
-        {numeros.length > 0 && <div className="manifesto-num">{numeros.map((n, k) => <div key={k} className="aparece"><b data-conta={n.valor}>{n.valor}</b><small>{n.rotulo}</small></div>)}</div>}
+
       </section>
+
+      {/* ============ NÚMEROS ============ */}
+      {numeros.length > 0 && (
+        <section className="numeros" aria-label="Números da Branding7">
+          <div className="lim numeros-in">
+            {numeros.slice(0, 4).map((n, k) => (
+              <div className="numero aparece" key={k}>
+                <b data-conta={n.valor}>{n.valor}</b>
+                <small>{n.rotulo}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ============ SOBRE (claro) ============ */}
       {mostra('sobre') && <section className="sobre" id="sobre">
@@ -464,16 +494,45 @@ export default function Site() {
         <a className="pn-cta" href="#contato">Orçamento<i><Seta /></i></a>
       </nav>
 
+      <BalaoWpp wpp={wpp} cfg={cfg} />
       <a className="wpp-flutua" href={wpp} target="_blank" rel="noopener" aria-label="Falar no WhatsApp" onClick={() => evento('Contact', { canal: 'whatsapp' })}><Zap /></a>
 
-      {player && (
-        <div className="player" role="dialog" aria-modal="true" aria-label="Vídeo" onClick={e => { if (e.target === e.currentTarget) setPlayer(null); }}>
-          <button className="player-x" onClick={() => setPlayer(null)} aria-label="Fechar">×</button>
-          <div className="player-cx">
-            {tipoLink(player) === 'arquivo' ? <video src={player} controls autoPlay playsInline /> : <iframe src={embed(player)} allow="autoplay; encrypted-media; fullscreen" allowFullScreen title="Vídeo" />}
+      {player && (() => {
+        const v = player.i != null ? tocaveis[player.i] : null, url = v ? v.video_url : player.url;
+        let x0 = null;
+        return (
+          <div className="player" role="dialog" aria-modal="true" aria-label="Vídeo" onClick={e => { if (e.target === e.currentTarget) setPlayer(null); }}
+            onTouchStart={e => { x0 = e.touches[0].clientX; }} onTouchEnd={e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 60) passar(dx < 0 ? 1 : -1); x0 = null; }}>
+            <button className="player-x" onClick={() => setPlayer(null)} aria-label="Fechar">×</button>
+            {v && tocaveis.length > 1 && <button className="player-seta ant" onClick={() => passar(-1)} aria-label="Vídeo anterior"><Seta /></button>}
+            <div className="player-palco" key={url}>
+              <div className="player-cx">
+                {tipoLink(url) === 'arquivo' ? <video src={url} controls autoPlay playsInline /> : <iframe src={embed(url)} allow="autoplay; encrypted-media; fullscreen" allowFullScreen title="Vídeo" />}
+              </div>
+              {v && (
+                <aside className="player-info">
+                  <span className="player-n">{String(player.i + 1).padStart(2, '0')} / {String(tocaveis.length).padStart(2, '0')}</span>
+                  <div className="player-quem">
+                    {v.avatar_url && <img src={v.avatar_url} alt="" />}
+                    <span><b>{v.cliente_nome || v.titulo}</b>{v.cliente_arroba && <small>@{String(v.cliente_arroba).replace(/^@/, '')}</small>}</span>
+                  </div>
+                  {v.titulo && v.cliente_nome && <p className="player-tit">{v.titulo}</p>}
+                  {v.tipo === 'depoimento' && v.texto && <blockquote className="player-depo">“{v.texto}”</blockquote>}
+                  {(v.visualizacoes || v.curtidas || v.comentarios) && <div className="obra-num">
+                    {v.visualizacoes && <span><IcOlho />{v.visualizacoes}</span>}
+                    {v.curtidas && <span><IcCoracao />{v.curtidas}</span>}
+                    {v.comentarios && <span><IcBalao />{v.comentarios}</span>}
+                  </div>}
+                  {v.resultado && <span className="obra-res"><IcSobe />{v.resultado}</span>}
+                  <a className="pilula" href={linkWpp(cfg, 'Vi o vídeo ' + (v.cliente_nome ? 'da ' + v.cliente_nome : 'de vocês') + ' no site e quero um assim.')} target="_blank" rel="noopener"
+                    onClick={() => evento('Contact', { canal: 'whatsapp', origem: 'player' })}><span>Quero um vídeo assim</span><i><Seta /></i></a>
+                </aside>
+              )}
+            </div>
+            {v && tocaveis.length > 1 && <button className="player-seta prox" onClick={() => passar(1)} aria-label="Próximo vídeo"><Seta /></button>}
           </div>
-        </div>
-      )}
+        );
+      })()}
     </>
   );
 }
@@ -722,6 +781,28 @@ function Reel({ m, ativo }) {
         <span className="reel-acoes"><i className="c" /><i /><i /></span>
         <span className="reel-leg">{m.nome}</span>
       </div>
+    </div>
+  );
+}
+
+/* balão do WhatsApp: aparece uma vez por visita, depois de alguns segundos */
+function BalaoWpp({ wpp, cfg }) {
+  const [ver, setVer] = useState(false);
+  useEffect(() => {
+    try { if (sessionStorage.getItem('b7_balao')) return; } catch (e) {}
+    const t = setTimeout(() => { setVer(true); try { sessionStorage.setItem('b7_balao', '1'); } catch (e) {} }, 9000);
+    return () => clearTimeout(t);
+  }, []);
+  useEffect(() => { if (!ver) return; const t = setTimeout(() => setVer(false), 14000); return () => clearTimeout(t); }, [ver]);
+  if (!ver) return null;
+  const nome = String(cfg.whatsapp_nome || 'Gabriel').split(' ')[0];
+  return (
+    <div className="balao-wpp" role="status">
+      <button className="balao-x" onClick={() => setVer(false)} aria-label="Fechar">×</button>
+      <a href={wpp} target="_blank" rel="noopener" onClick={() => { evento('Contact', { canal: 'whatsapp', origem: 'balao' }); setVer(false); }}>
+        <span className="balao-av">{nome.charAt(0)}<i /></span>
+        <span><b>{nome} · Branding7</b><small>Oi! Quer saber quanto fica o seu vídeo? Me chama aqui que eu te respondo agora. 👋</small></span>
+      </a>
     </div>
   );
 }
