@@ -118,8 +118,15 @@ function Celular3DReal({ progresso, midias = [], falhou }) {
     render.outputColorSpace = THREE.SRGBColorSpace; render.toneMapping = THREE.ACESFilmicToneMapping; render.toneMappingExposure = 1.1;
     el.appendChild(render.domElement);
     const cena = new THREE.Scene();
-    const pmrem = new THREE.PMREMGenerator(render);
-    cena.environment = pmrem.fromScene(new RoomEnvironment(), .04).texture;
+    /* reflexo de ambiente só no computador: placas de celular (Mali/Adreno)
+       às vezes não suportam e a cena sai vazia, sem erro */
+    const toque = matchMedia('(pointer: coarse)').matches;
+    let pmrem = null;
+    if (!toque) {
+      try { pmrem = new THREE.PMREMGenerator(render); cena.environment = pmrem.fromScene(new RoomEnvironment(), .04).texture; }
+      catch (e) { pmrem = null; }
+    }
+    if (!cena.environment) cena.add(new THREE.HemisphereLight(0xd9ccff, 0x1a1030, 1.6));
     const olho = new THREE.PerspectiveCamera(30, 1, .1, 200); olho.position.set(0, 0, 40); olho.lookAt(0, 0, 0);
     cena.add(new THREE.AmbientLight(0xffffff, .3));
     const luzRosa = new THREE.PointLight(0xff4fb0, 520, 70); luzRosa.position.set(14, 8, 10); cena.add(luzRosa);
@@ -284,6 +291,20 @@ function Celular3DReal({ progresso, midias = [], falhou }) {
         const m = lista()[atual] || {}, ritmo = m.video && videoPronto ? 32 : 100;
         if (agora - (quadro.ultDes || 0) >= ritmo) { quadro.ultDes = agora; desenhar(performance.now()); }
         render.render(cena, olho);
+        /* conferência: depois de ~1,2 s visível, o centro da tela tem que ter
+           algo desenhado; se estiver vazio, troca pela reserva sem 3D */
+        if (!quadro.conferido && performance.now() - (quadro.visivelDesde || (quadro.visivelDesde = performance.now())) > 1200) {
+          quadro.conferido = true;
+          try {
+            const gl = render.getContext(), W = gl.drawingBufferWidth, H = gl.drawingBufferHeight, px = new Uint8Array(4);
+            let algo = false;
+            for (const [fx, fy] of [[.5, .5], [.5, .35], [.5, .65], [.42, .5], [.58, .5]]) {
+              gl.readPixels(Math.floor(W * fx), Math.floor(H * fy), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+              if (px[3] > 10) { algo = true; break; }
+            }
+            if (!algo) { falhou(); return; }
+          } catch (e) {}
+        }
       }
       raf = requestAnimationFrame(quadro);
     };
@@ -294,7 +315,7 @@ function Celular3DReal({ progresso, midias = [], falhou }) {
       io.disconnect(); ro.disconnect(); removeEventListener('pointermove', mover); removeEventListener('pointermove', arrastar); removeEventListener('pointerup', cima);
       cancelAnimationFrame(raf); video.pause(); video.removeAttribute('src');
       cena.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) { (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (m.map) m.map.dispose(); m.dispose(); }); } });
-      pmrem.dispose(); render.dispose(); if (render.domElement.parentNode) render.domElement.parentNode.removeChild(render.domElement);
+      if (pmrem) pmrem.dispose(); render.dispose(); if (render.domElement.parentNode) render.domElement.parentNode.removeChild(render.domElement);
     };
   }, [progresso]);
   return <div className="celular3d" ref={caixa} role="img" aria-label="Celular mostrando vídeos de clientes da Branding7" />;

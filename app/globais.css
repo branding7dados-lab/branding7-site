@@ -905,6 +905,15 @@ html{scrollbar-width:thin;scrollbar-color:#7b3fd1 #06030f;}
 .cel-plano-quem img{width:26px;height:26px;border-radius:50%;background:#fff;object-fit:cover;}
 .cel-plano-leg{position:absolute;z-index:2;left:14px;right:14px;bottom:22px;color:#fff;font:600 14px 'Sora',sans-serif;}
 
+/* vidro nas barras (de cima e de baixo): desfoque leve só nelas */
+.pilula-nav{background:rgba(244,240,234,.78) !important;-webkit-backdrop-filter:blur(16px) saturate(160%) !important;backdrop-filter:blur(16px) saturate(160%) !important;
+  border:1px solid rgba(255,255,255,.5);box-shadow:0 14px 40px -16px rgba(0,0,0,.6);}
+.cel-topo{background:rgba(10,6,24,.62) !important;-webkit-backdrop-filter:blur(18px) saturate(160%) !important;backdrop-filter:blur(18px) saturate(160%) !important;}
+.cel-acoes{background:rgba(14,9,32,.6) !important;-webkit-backdrop-filter:blur(18px) saturate(160%) !important;backdrop-filter:blur(18px) saturate(160%) !important;}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .pilula-nav{background:rgba(244,240,234,.96) !important;} .cel-topo{background:rgba(10,6,24,.96) !important;} .cel-acoes{background:rgba(14,9,32,.97) !important;}
+}
+
 /* nada vaza para os lados: no celular o navegador alargava a página e
    empurrava a barra de baixo e o menu para fora da tela */
 html,body{overflow-x:clip;max-width:100%;}
