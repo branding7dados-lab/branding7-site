@@ -108,7 +108,8 @@ function Celular3DReal({ progresso, midias = [], falhou }) {
   useEffect(() => {
     const el = caixa.current; if (!el) return;
     let render;
-    const dpr = Math.min(devicePixelRatio || 1, 1.5);
+    /* celular e tablet: resolução 1x (a tela já é pequena); computador: até 1,5x */
+    const dpr = matchMedia('(pointer: coarse)').matches ? 1 : Math.min(devicePixelRatio || 1, 1.5);
     try { render = new THREE.WebGLRenderer({ antialias: dpr < 1.5, alpha: true, powerPreference: 'high-performance' }); }
     catch (e) { falhou(); return; }
     if (!render.getContext()) { falhou(); return; }
@@ -277,8 +278,31 @@ function Celular3DReal({ progresso, midias = [], falhou }) {
     cvs.addEventListener('pointerdown', baixo); addEventListener('pointermove', arrastar, { passive: true }); addEventListener('pointerup', cima);
 
     let visivel = false, raf = 0, t0 = performance.now(), ry = 0, rx = 0, ultimaTela = 0;
+    /* GUARDA DE DESEMPENHO: mede o intervalo real entre quadros da página
+       enquanto o celular está na tela. Se em ~2 s mais da metade dos
+       quadros passar de 40 ms (abaixo de 25 qps), o aparelho não aguenta o
+       3D liso: primeiro baixa a resolução; se continuar, troca pela versão
+       leve sem 3D (os mesmos vídeos). Quem tem máquina boa nem percebe. */
+    let medAnt = 0, medN = 0, medLentos = 0, rebaixado = false, janela = 0;
+    const guarda = agora => {
+      if (document.hidden) { medAnt = 0; janela = 0; return false; }
+      if (medAnt) { const d = agora - medAnt; if (d < 3000) { medN++; if (d > 40) medLentos++; } }
+      medAnt = agora;
+      if (!janela) janela = agora;
+      /* decide a cada 1,5 s de tela (com pelo menos 6 quadros medidos) */
+      if (agora - janela >= 1500 && medN >= 4) {
+        janela = agora;
+        const taxa = medLentos / medN;
+        medN = 0; medLentos = 0;
+        /* muito lento (quase todo quadro passando de 40 ms): direto para a versão leve */
+        if (taxa > .8 || (taxa > .5 && rebaixado)) { falhou(); return true; }
+        if (taxa > .5) { rebaixado = true; render.setPixelRatio(.75); }
+      }
+      return false;
+    };
     const quadro = agora => {
-      raf = 0; if (!visivel) { video.pause(); return; }
+      raf = 0; if (!visivel) { video.pause(); medAnt = 0; return; }
+      if (guarda(agora)) return;
       const L = lista(); if (L.length !== quadro.n) { quadro.n = L.length; L.forEach(x => { pegaImg(x.capa); pegaImg(x.avatar); }); trocar(0); }
       if (lista()[atual] && lista()[atual].video && video.paused) video.play().catch(() => {});
       const t = (performance.now() - t0) / 1000, p = progresso ? progresso() : 0;
