@@ -11,7 +11,7 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
 const TW = 540, TH = 1170;          /* tela 9:19,5 (coordenadas de desenho) */
-const ESC = 2;                      /* o canvas tem o dobro: 1080×2340, nítido de perto */
+const ESC = 1.5;                    /* 810×1755: nítido no tamanho em que o celular aparece, 44% menos para a placa de vídeo */
 const W = 7.4, H = 16, P = .82, R = 1.15;
 
 function retanguloRedondo(w, h, r) {
@@ -108,13 +108,14 @@ function Celular3DReal({ progresso, midias = [], falhou }) {
   useEffect(() => {
     const el = caixa.current; if (!el) return;
     let render;
-    try { render = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' }); }
+    const dpr = Math.min(devicePixelRatio || 1, 1.5);
+    try { render = new THREE.WebGLRenderer({ antialias: dpr < 1.5, alpha: true, powerPreference: 'high-performance' }); }
     catch (e) { falhou(); return; }
     if (!render.getContext()) { falhou(); return; }
     /* o celular derrubou a tela 3D (falta de memória): troca pela reserva */
     render.domElement.addEventListener('webglcontextlost', e => { e.preventDefault(); falhou(); }, { once: true });
     const calmo = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    render.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    render.setPixelRatio(dpr);
     render.outputColorSpace = THREE.SRGBColorSpace; render.toneMapping = THREE.ACESFilmicToneMapping; render.toneMappingExposure = 1.1;
     el.appendChild(render.domElement);
     const cena = new THREE.Scene();
@@ -285,10 +286,14 @@ function Celular3DReal({ progresso, midias = [], falhou }) {
       giro.rotation.set(rx, ry, calmo ? 0 : Math.sin(t * .8) * .03);
       giro.position.y = calmo ? 0 : Math.sin(t * 1.1) * .4;
       /* ~30 quadros por segundo bastam (a tela é um vídeo de 30fps) */
-      if (agora - ultimaTela >= 32) {
+      /* girando (rolagem, mouse, arrasto): 30 quadros/s; parado, só o
+         balanço leve: 15 quadros/s — metade do trabalho da placa de vídeo */
+      const mexendo = Math.abs(alvoY - ry) > .003 || Math.abs(alvoX - rx) > .003 || segurando;
+      if (agora - ultimaTela >= (mexendo ? 32 : 66)) {
         ultimaTela = agora;
         /* a tela só é redesenhada no ritmo do conteúdo: vídeo 30x/s, capa 10x/s */
-        const m = lista()[atual] || {}, ritmo = m.video && videoPronto ? 32 : 100;
+        /* capa (imagem parada): só a barrinha e as curtidas mudam — 4x/s basta; vídeo: 24x/s */
+        const m = lista()[atual] || {}, ritmo = m.video && videoPronto ? 41 : 250;
         if (agora - (quadro.ultDes || 0) >= ritmo) { quadro.ultDes = agora; desenhar(performance.now()); }
         render.render(cena, olho);
         /* conferência: depois de ~1,2 s visível, o centro da tela tem que ter
