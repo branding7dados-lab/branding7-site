@@ -136,6 +136,10 @@ function Celular3DReal({ progresso, midias = [], falhou }) {
     const contra = new THREE.DirectionalLight(0xc9b8ff, .9); contra.position.set(-6, 4, -14); cena.add(contra);
 
     /* ---------- a tela (canvas) ---------- */
+    /* as fontes do next/font têm nome próprio: o canvas usa o mesmo */
+    const raizCss = getComputedStyle(document.documentElement);
+    const FS = ((raizCss.getPropertyValue('--f-sora') || '').trim() || 'Arial') + ', Arial';
+    const FI = ((raizCss.getPropertyValue('--f-inter') || '').trim() || 'Arial') + ', Arial';
     const cv = document.createElement('canvas'); cv.width = TW * ESC; cv.height = TH * ESC;
     const g = cv.getContext('2d');
     const texTela = new THREE.CanvasTexture(cv); texTela.colorSpace = THREE.SRGBColorSpace;
@@ -170,8 +174,8 @@ function Celular3DReal({ progresso, midias = [], falhou }) {
     /* texto que cabe: diminui a fonte até caber; se ainda não couber, corta com "…" */
     const caber = (txt, peso, max, min, larg) => {
       txt = String(txt || ''); let t = max;
-      for (; t > min; t -= 2) { g.font = peso + ' ' + t + 'px Sora, Inter, Arial'; if (g.measureText(txt).width <= larg) return txt; }
-      g.font = peso + ' ' + min + 'px Sora, Inter, Arial';
+      for (; t > min; t -= 2) { g.font = peso + ' ' + t + 'px ' + FS; if (g.measureText(txt).width <= larg) return txt; }
+      g.font = peso + ' ' + min + 'px ' + FS;
       return txt;   /* o corte com "…" fica com cortar() */
     };
     const cortar = (txt, larg) => { txt = String(txt || ''); if (g.measureText(txt).width <= larg) return txt;
@@ -214,7 +218,7 @@ function Celular3DReal({ progresso, midias = [], falhou }) {
         g.globalAlpha = ease; g.fillStyle = '#fff'; g.textAlign = 'center';
         const nomeT = caber(m.nome || 'Branding7', '700', 46, 30, TW - 70);
         g.fillText(cortar(nomeT, TW - 70), TW / 2, TH * .38 + lado / 2 + 90);
-        g.font = '500 28px Inter, Arial'; g.fillStyle = 'rgba(255,255,255,.8)'; g.fillText('confia na Branding7', TW / 2, TH * .38 + lado / 2 + 136);
+        g.font = '500 28px ' + FI; g.fillStyle = 'rgba(255,255,255,.8)'; g.fillText('confia na Branding7', TW / 2, TH * .38 + lado / 2 + 136);
         g.globalAlpha = 1;
       }
       /* sombras da interface */
@@ -235,13 +239,13 @@ function Celular3DReal({ progresso, midias = [], falhou }) {
       g.save(); g.beginPath(); g.arc(56, 140, 28, 0, Math.PI * 2); g.fillStyle = '#fff'; g.fill(); g.clip();
       if (av) g.drawImage(av, 28, 112, 56, 56); else { g.fillStyle = '#9A2AA8'; g.fillRect(28, 112, 56, 56); }
       g.restore();
-      g.textAlign = 'left'; g.fillStyle = '#fff'; g.font = '700 27px Inter, Arial';
+      g.textAlign = 'left'; g.fillStyle = '#fff'; g.font = '700 27px ' + FI;
       g.fillText(cortar(m.arroba ? '@' + String(m.arroba).replace(/^@/, '') : (m.nome || 'branding7'), TW - 130), 98, 136);
-      g.font = '500 22px Inter, Arial'; g.fillStyle = 'rgba(255,255,255,.75)'; g.fillText('Vídeo por @b7.agencia', 98, 164);
+      g.font = '500 22px ' + FI; g.fillStyle = 'rgba(255,255,255,.75)'; g.fillText('Vídeo por @b7.agencia', 98, 164);
       /* ações à direita */
       const pulso = 1 + Math.max(0, Math.sin((agora - inicio) / 180)) * .06 * (t < .3 ? 1 : 0);
       g.fillStyle = '#ff3d71'; g.save(); g.translate(TW - 58, TH - 390); g.scale(pulso, pulso); coracao(0, -26, 52); g.restore();
-      g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '700 22px Inter, Arial';
+      g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '700 22px ' + FI;
       const c = Math.floor(curtidas + Math.min(1, t) * 1400);
       g.fillText(c >= 1000 ? (c / 1000).toFixed(1).replace('.', ',') + ' mil' : String(c), TW - 58, TH - 332);
       g.strokeStyle = '#fff'; g.lineWidth = 5;
@@ -249,9 +253,9 @@ function Celular3DReal({ progresso, midias = [], falhou }) {
       g.fillText(String(40 + atual * 7), TW - 58, TH - 222);
       g.beginPath(); g.moveTo(TW - 80, TH - 176); g.lineTo(TW - 36, TH - 196); g.lineTo(TW - 52, TH - 152); g.closePath(); g.stroke();
       /* legenda */
-      g.textAlign = 'left'; g.font = '600 30px Inter, Arial'; g.fillStyle = '#fff';
+      g.textAlign = 'left'; g.font = '600 30px ' + FI; g.fillStyle = '#fff';
       g.fillText(cortar(m.titulo || m.nome || 'Branding7', TW - 110), 28, TH - 150);
-      g.font = '500 24px Inter, Arial'; g.fillStyle = 'rgba(255,255,255,.8)';
+      g.font = '500 24px ' + FI; g.fillStyle = 'rgba(255,255,255,.8)';
       g.fillText('🎬 Roteiro, gravação e edição: Branding7', 28, TH - 110);
       /* barra de casa */
       g.fillStyle = 'rgba(255,255,255,.85)'; redondo(TW / 2 - 90, TH - 34, 180, 8, 4); g.fill();

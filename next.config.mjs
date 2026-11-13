@@ -4,6 +4,8 @@ const config = {
   trailingSlash: true,
   images: { unoptimized: true },
   reactStrictMode: true,
-  poweredByHeader: false
+  poweredByHeader: false,
+  /* CSS dentro do HTML: a abertura não espera o arquivo de estilos */
+  experimental: { inlineCss: true }
 };
 export default config;

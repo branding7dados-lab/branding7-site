@@ -1,4 +1,17 @@
 import './globais.css';
+import localFont from 'next/font/local';
+
+/* fontes pelo next/font: pré-carregadas no cabeçalho e com fonte reserva de
+   métricas ajustadas — o título não "pula" quando a fonte chega (CLS) */
+const sora = localFont({ src: '../public/fonts/sora-var.woff2', weight: '300 800', variable: '--f-sora', display: 'swap', adjustFontFallback: 'Arial' });
+const inter = localFont({
+  src: [
+    { path: '../public/fonts/inter-400.woff2', weight: '400' },
+    { path: '../public/fonts/inter-500.woff2', weight: '500' },
+    { path: '../public/fonts/inter-600.woff2', weight: '600' },
+    { path: '../public/fonts/inter-700.woff2', weight: '700' }
+  ], variable: '--f-inter', display: 'swap', adjustFontFallback: 'Arial'
+});
 
 export const metadata = {
   metadataBase: new URL('https://branding7.com.br'),
@@ -20,9 +33,10 @@ const ld = { '@context': 'https://schema.org', '@type': 'ProfessionalService', n
 
 export default function Raiz({ children }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" className={sora.variable + ' ' + inter.variable}>
       <head>
-        <link rel="preload" href="/fonts/sora-var.woff2" as="font" type="font/woff2" crossOrigin="" />
+        {/* os dados e os logos vêm do Supabase: conexão aberta cedo */}
+        <link rel="preconnect" href="https://rartcafydsaocdzshqcx.supabase.co" crossOrigin="" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
       </head>
       <body>{children}</body>

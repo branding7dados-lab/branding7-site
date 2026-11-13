@@ -13,5 +13,12 @@
     "react": "19.1.1",
     "react-dom": "19.1.1",
     "three": "0.170.0"
-  }
+  },
+  "browserslist": [
+    "chrome >= 111",
+    "edge >= 111",
+    "firefox >= 111",
+    "safari >= 16.4",
+    "ios_saf >= 16.4"
+  ]
 }

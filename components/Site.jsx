@@ -222,6 +222,16 @@ export default function Site() {
     return () => { removeEventListener('scroll', pedir); removeEventListener('resize', pedir); cancelAnimationFrame(raf); };
   }, []);
 
+  /* o 3D (three.js, o arquivo mais pesado) só é baixado quando a seção do
+     celular está chegando — não pesa na abertura do site */
+  const centroRef = useRef(null);
+  const [perto3d, setPerto3d] = useState(false);
+  useEffect(() => {
+    const el = centroRef.current; if (!el || perto3d) return;
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setPerto3d(true); io.disconnect(); } }, { rootMargin: '1200px 0px' });
+    io.observe(el); return () => io.disconnect();
+  }, [perto3d, cfg]);
+
   const progressoProcesso = useCallback(() => {
     const sec = typeof document !== 'undefined' && document.getElementById('processo');
     return sec ? parseFloat(sec.style.getPropertyValue('--p')) || 0 : 0;
@@ -273,7 +283,7 @@ export default function Site() {
         </div>
         <Visor />
         <header className="heroi-topo">
-          <img src="/marca/logo-white.png" alt="Branding7" width="132" height="52" />
+          <img src="/marca/logo-white-300.png" alt="Branding7" width="132" height="52" />
           <a className="topo-link" href={insta} target="_blank" rel="noopener" onClick={insta_}>@{String(cfg.instagram || 'b7.agencia').replace(/^@/, '')}</a>
         </header>
         <div className="heroi-base">
@@ -360,7 +370,7 @@ export default function Site() {
           <div className="processo-ceu" aria-hidden="true" />
           <p className="rotulo centro">Processo de criação</p>
           <h2 className="processo-titulo" aria-label="Do roteiro ao resultado: seis passos">DO ROTEIRO<br />AO RESULTADO<br /><em>SEIS PASSOS</em></h2>
-          <div className="processo-centro"><Celular3D progresso={progressoProcesso} midias={midiasCelular.filter(m => m.video || m.capa)} /></div>
+          <div className="processo-centro" ref={centroRef}>{perto3d && <Celular3D progresso={progressoProcesso} midias={midiasCelular.filter(m => m.video || m.capa)} />}</div>
           <ol className="processo-passos">
             {PASSOS.map(([t, d], k) => (
               <li key={t} style={{ '--k': k }}><span>{String(k + 1).padStart(2, '0')}</span><b>{t}</b><p>{d}</p></li>
@@ -474,7 +484,7 @@ export default function Site() {
       <footer className="rodape">
         <div className="creditos" aria-hidden="true"><span>BRANDING</span><span className="c7">7</span></div>
         <div className="lim rodape-in">
-          <img src="/marca/logo-white.png" alt="Branding7" width="120" height="47" />
+          <img src="/marca/logo-white-300.png" alt="Branding7" width="120" height="47" />
           <nav aria-label="Rodapé">
             <a href={insta} target="_blank" rel="noopener" onClick={insta_}>Instagram</a>
             <a href={wpp} target="_blank" rel="noopener">WhatsApp</a>
@@ -857,7 +867,7 @@ function MenuCelular({ wpp, insta, nav }) {
   return (
     <>
       <header className={'cel-topo' + (rolou || aberto ? ' visivel' : '')}>
-        <a href="#inicio" onClick={ir}><img src="/marca/logo-white.png" alt="Branding7" width="102" height="40" /></a>
+        <a href="#inicio" onClick={ir}><img src="/marca/logo-white-300.png" alt="Branding7" width="102" height="40" /></a>
         <button className={'cel-menu-bt' + (aberto ? ' x' : '')} aria-label={aberto ? 'Fechar menu' : 'Abrir menu'} aria-expanded={aberto} onClick={() => setAberto(a => !a)}><i /><i /></button>
       </header>
       <nav className={'cel-menu' + (aberto ? ' aberto' : '')} aria-hidden={!aberto}>
