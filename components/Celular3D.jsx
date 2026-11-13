@@ -283,10 +283,14 @@ function Celular3DReal({ progresso, midias = [], falhou }) {
        quadros passar de 40 ms (abaixo de 25 qps), o aparelho não aguenta o
        3D liso: primeiro baixa a resolução; se continuar, troca pela versão
        leve sem 3D (os mesmos vídeos). Quem tem máquina boa nem percebe. */
-    let medAnt = 0, medN = 0, medLentos = 0, rebaixado = false, janela = 0;
+    let medAnt = 0, medN = 0, medLentos = 0, rebaixado = false, janela = 0, aquece = 0;
     const guarda = agora => {
-      if (document.hidden) { medAnt = 0; janela = 0; return false; }
-      if (medAnt) { const d = agora - medAnt; if (d < 3000) { medN++; if (d > 40) medLentos++; } }
+      if (document.hidden) { medAnt = 0; janela = 0; aquece = 0; return false; }
+      /* aquecimento: os 2 primeiros segundos visível (o 3D carregando
+         texturas e montando a cena) não contam */
+      if (!aquece) aquece = agora;
+      if (agora - aquece < 2000) { medAnt = agora; return false; }
+      if (medAnt) { const d = agora - medAnt; if (d < 3000) { medN++; if (d > 34) medLentos++; } }
       medAnt = agora;
       if (!janela) janela = agora;
       /* decide a cada 1,5 s de tela (com pelo menos 6 quadros medidos) */
@@ -295,13 +299,13 @@ function Celular3DReal({ progresso, midias = [], falhou }) {
         const taxa = medLentos / medN;
         medN = 0; medLentos = 0;
         /* muito lento (quase todo quadro passando de 40 ms): direto para a versão leve */
-        if (taxa > .8 || (taxa > .5 && rebaixado)) { falhou(); return true; }
-        if (taxa > .5) { rebaixado = true; render.setPixelRatio(.75); }
+        if (taxa > .6 || (taxa > .3 && rebaixado)) { falhou(); return true; }
+        if (taxa > .3) { rebaixado = true; render.setPixelRatio(.75); }
       }
       return false;
     };
     const quadro = agora => {
-      raf = 0; if (!visivel) { video.pause(); medAnt = 0; return; }
+      raf = 0; if (!visivel) { video.pause(); medAnt = 0; aquece = 0; janela = 0; medN = 0; medLentos = 0; return; }
       if (guarda(agora)) return;
       const L = lista(); if (L.length !== quadro.n) { quadro.n = L.length; L.forEach(x => { pegaImg(x.capa); pegaImg(x.avatar); }); trocar(0); }
       if (lista()[atual] && lista()[atual].video && video.paused) video.play().catch(() => {});
