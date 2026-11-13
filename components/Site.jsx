@@ -342,9 +342,18 @@ export default function Site({ lang = 'pt' }) {
           <TextoAcende paragrafos={sobreTexto || t.sobreTexto} />
           <div className="sobre-pe aparece">
             <Botao href={wpp} alvo onClick={() => evento('Contact', { canal: 'whatsapp' })}>{cta}</Botao>
-            <a className="pilula-simples escura" href={t.sobrePag}>{t.conhecaEquipe}</a>
             <span className="sobre-selos">{t.selos.map(x => <span key={x}>{x}</span>)}</span>
           </div>
+          {/* chamada para a página Sobre nós (história, equipe e bastidores) */}
+          <a className="sobre-chamada aparece" href={t.sobrePag}>
+            <span className="sc-rostos">
+              {(de('equipe').length ? de('equipe').slice(0, 4) : []).map(p => <span key={p.id}>{p.capa_url ? <img src={p.capa_url} alt="" loading="lazy" /> : (p.titulo || '?').charAt(0)}</span>)}
+              {!de('equipe').length && de('bastidor').slice(0, 3).map(p => <span key={p.id}><img src={p.capa_url} alt="" loading="lazy" /></span>)}
+              <span className="sc-marca"><img src="/marca/symbol-white.png" alt="" width="20" height="24" /></span>
+            </span>
+            <span className="sc-tx"><small>{t.sobreNos}</small><b>{t.conhecaChamada}</b></span>
+            <i><Seta /></i>
+          </a>
         </div>
       </section>}
 
@@ -474,6 +483,7 @@ export default function Site({ lang = 'pt' }) {
         <img src="/marca/symbol-white.png" alt="" width="20" height="24" />
         {NAV_PILULA.map(([id, r]) =>
           <a key={id} href={'#' + id} className={ativo === id ? 'on' : ''}>{r}</a>)}
+        <a href={t.sobrePag}>{t.sobreNos}</a>
         <a className="pn-entrar" href="https://sistema.branding7.com.br/"><IcEntrar />{t.entrar}</a>
         <a className="pn-cta" href="#contato">{t.orcCurto}<i><Seta /></i></a>
       </nav>

@@ -1154,3 +1154,21 @@ html,body{overflow-x:clip;max-width:100%;}
 .idiomas a:hover{opacity:1;filter:none;transform:scale(1.08);}
 .idiomas a.on{opacity:1;filter:none;box-shadow:0 0 0 2px rgba(255,255,255,.85);cursor:default;}
 .rodape .idiomas,.cel-menu-pe .idiomas{background:none;}
+
+/* chamada "Sobre nós" na seção Sobre da página inicial */
+.sobre-chamada{display:flex;align-items:center;gap:18px;margin-top:46px;padding:16px 16px 16px 18px;border-radius:24px;background:#fff;color:#14092e;
+  box-shadow:0 24px 50px -34px rgba(20,9,46,.5);max-width:640px;transition:transform .4s cubic-bezier(.16,1,.3,1),box-shadow .4s;}
+.sobre-chamada:hover{transform:translateY(-3px);box-shadow:0 30px 60px -30px rgba(91,43,198,.45);}
+.sc-rostos{display:flex;flex:none;}
+.sc-rostos > span{width:46px;height:46px;border-radius:50%;overflow:hidden;display:grid;place-items:center;margin-left:-12px;border:3px solid #fff;background:var(--grad);color:#fff;font-weight:700;}
+.sc-rostos > span:first-child{margin-left:0;}
+.sc-rostos img{width:100%;height:100%;object-fit:cover;}
+.sc-rostos .sc-marca img{width:18px;height:auto;object-fit:contain;}
+.sc-tx{flex:1;display:grid;gap:2px;}
+.sc-tx small{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#9A2AA8;}
+.sc-tx b{font:600 17px/1.3 var(--f-sora),sans-serif;letter-spacing:-.01em;}
+.sobre-chamada > i{width:44px;height:44px;flex:none;border-radius:50%;display:grid;place-items:center;background:var(--grad);color:#fff;transition:transform .3s cubic-bezier(.3,1.5,.5,1);}
+.sobre-chamada > i svg{width:18px;height:18px;}
+.sobre-chamada:hover > i{transform:rotate(45deg);}
+@media (max-width:640px){ .sobre-chamada{gap:12px;padding:12px;} .sc-tx b{font-size:15px;} .sc-rostos > span{width:38px;height:38px;} }
+.pilula-nav a{white-space:nowrap;}
