@@ -623,7 +623,7 @@ h2.aparece.visivel{clip-path:inset(-20% -5% -20% -5%);}
 .heroi{--hy:0;}
 .muro{position:absolute;inset:0;overflow:hidden;}
 .muro::after{content:"";position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(70% 60% at 22% 78%,rgba(6,3,15,.95),rgba(6,3,15,.62) 55%,rgba(6,3,15,.25) 85%),linear-gradient(180deg,rgba(6,3,15,.6),transparent 30%,transparent 60%,rgba(6,3,15,.92));}
+  background:radial-gradient(48% 42% at 20% 84%,rgba(6,3,15,.9),rgba(6,3,15,.55) 55%,transparent 100%),radial-gradient(30% 30% at 90% 90%,rgba(6,3,15,.75),transparent 100%),linear-gradient(180deg,rgba(6,3,15,.4),transparent 16%,transparent 72%,rgba(6,3,15,.85));}
 .muro-plano{position:absolute;left:50%;top:50%;width:150%;height:200%;display:flex;gap:18px;justify-content:center;
   transform:translate(-50%,-50%) rotate(-14deg);animation:muroEntra 1.8s cubic-bezier(.16,1,.3,1) backwards;}
 /* com placa de vídeo: o muro deitado em perspectiva (parado; só as colunas andam) */

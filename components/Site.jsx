@@ -709,16 +709,21 @@ function MuroReels({ itens, heroi }) {
   if (heroi && !capas.some(c => c.video === heroi.video_url)) capas.unshift({ video: heroi.video_url });
   const logos = itens.filter(i => i.tipo === 'cliente' && i.capa_url).map(i => ({ logo: i.capa_url, nome: i.cliente_nome }));
   if (!capas.length && !logos.length) return null;
-  /* cada coluna mistura capas e logos, começando de um ponto diferente */
-  const base = [];
-  const n = Math.max(capas.length, Math.ceil(logos.length / 2), 3);
-  for (let k = 0; k < n; k++) { if (capas.length) base.push(capas[k % capas.length]); if (logos.length) base.push(logos[(k * 2) % logos.length]); if (logos.length > 1) base.push(logos[(k * 2 + 1) % logos.length]); }
-  const porCol = 5;
+  /* distribuição justa: os logos entram em rodízio (cada cliente aparece
+     quase o mesmo número de vezes) intercalados com as capas, e são
+     distribuídos linha a linha entre as colunas, para o mesmo cliente
+     nunca ficar colado nele mesmo */
+  const porCol = 6, total = cols * porCol, seq = [];
+  let iL = 0, iC = 0;
+  for (let k = 0; k < total; k++) {
+    const vezCapa = capas.length && (!logos.length || k % 3 === 0);
+    if (vezCapa) seq.push(capas[iC++ % capas.length]); else seq.push(logos[iL++ % logos.length]);
+  }
   return (
     <div className={'muro' + (m3d ? ' m3d' : '')} aria-hidden="true">
       <div className="muro-plano">
         {Array.from({ length: cols }).map((_, c) => {
-          const lista = Array.from({ length: porCol }).map((_, j) => base[(c * 3 + j * (c % 2 ? 2 : 1)) % base.length]);
+          const lista = Array.from({ length: porCol }).map((_, j) => seq[j * cols + c]);
           return (
             <div className="muro-col" key={c} style={{ '--dur': (38 + (c % 3) * 9) + 's', '--dir': c % 2 ? 'reverse' : 'normal', '--y': (c % 3) * -9 + '%' }}>
               <div className="muro-in">{[0, 1].map(r => lista.map((t, j) => (
