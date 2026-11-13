@@ -491,6 +491,7 @@ export default function Site() {
         <img src="/marca/symbol-white.png" alt="" width="20" height="24" />
         {NAV_PILULA.map(([id, r]) =>
           <a key={id} href={'#' + id} className={ativo === id ? 'on' : ''}>{r}</a>)}
+        <a className="pn-entrar" href="https://sistema.branding7.com.br/"><IcEntrar />Entrar</a>
         <a className="pn-cta" href="#contato">Orçamento<i><Seta /></i></a>
       </nav>
 
@@ -623,6 +624,7 @@ function rastreadores(cfg) {
 }
 
 /* cantos de visor, REC piscando e o tempo correndo na abertura */
+const IcEntrar = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M9 16l4-4-4-4M13 12H3"/></svg>;
 const IcOlho = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 5c5 0 9 4.5 10 7-1 2.5-5 7-10 7S3 14.5 2 12c1-2.5 5-7 10-7zm0 3.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/></svg>;
 const IcCoracao = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 21 3.6 12.9A5.2 5.2 0 0 1 12 6a5.2 5.2 0 0 1 8.4 6.9z"/></svg>;
 const IcBalao = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>;
@@ -866,6 +868,7 @@ function MenuCelular({ wpp, insta, nav }) {
       <div className="cel-acoes">
         <a className="cel-zap" href={wpp} target="_blank" rel="noopener" onClick={() => evento('Contact', { canal: 'whatsapp' })}><Zap />WhatsApp</a>
         <a className="cel-orc" href="#contato">Orçamento<Seta /></a>
+        <a className="cel-entrar" href="https://sistema.branding7.com.br/" aria-label="Entrar no sistema"><IcEntrar /><span>Entrar</span></a>
       </div>
     </>
   );

@@ -877,6 +877,16 @@ html{scrollbar-width:thin;scrollbar-color:#7b3fd1 #06030f;}
 /* título da abertura no celular: menor, sem palavra sozinha */
 @media (max-width:640px){ .heroi h1{font-size:10.6vw !important;max-width:none;} }
 
+/* botão Entrar (vai para o sistema) */
+.pilula-nav .pn-entrar{display:inline-flex !important;align-items:center;gap:6px;margin-left:4px;padding:9px 14px;border-radius:99px;border:1px solid rgba(20,9,46,.18);color:#14092e;font-weight:700;}
+.pilula-nav .pn-entrar:hover{background:rgba(20,9,46,.07);}
+.pilula-nav .pn-entrar svg{width:15px;height:15px;}
+.cel-acoes{grid-template-columns:1fr 1fr auto !important;}
+.cel-acoes a.cel-entrar{flex-direction:column;gap:2px;font-size:11px;}
+.cel-entrar{flex:0 0 auto !important;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:58px;padding:0 6px;border-radius:16px;
+  color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);font:700 11px 'Inter',sans-serif;text-decoration:none;}
+.cel-entrar svg{width:18px;height:18px;}
+
 /* nada vaza para os lados: no celular o navegador alargava a página e
    empurrava a barra de baixo e o menu para fora da tela */
 html,body{overflow-x:clip;max-width:100%;}

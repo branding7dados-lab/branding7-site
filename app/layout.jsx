@@ -2,7 +2,7 @@ import './globais.css';
 
 export const metadata = {
   metadataBase: new URL('https://branding7.com.br'),
-  title: 'Branding7 — O vídeo que faz você vender',
+  title: 'Branding7',
   description: 'Agência de marketing digital especializada em vídeo: criativos que vendem, viralizam e performam. Roteiro, gravação, edição e anúncios.',
   alternates: { canonical: '/' },
   openGraph: {
