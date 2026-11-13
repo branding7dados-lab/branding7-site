@@ -6,7 +6,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Cinema from './Cinema';
 import { gpuBoa } from '@/lib/gpu';
-import { carregar, CFG_PADRAO, SERVICOS_PADRAO, linkWpp, tipoLink, embed, enviarLead, origemDaVisita, evento, registrar } from '@/lib/dados';
+import { carregar, CFG_PADRAO, SERVICOS_PADRAO, linkWpp, tipoLink, embed, enviarLead, origemDaVisita, evento, registrar, horariosLivres, agendar } from '@/lib/dados';
+import { T } from '@/lib/textos';
+import { Cookies, rastreadores } from './Casca';
 
 /* a câmera 3D chega só no navegador e só quando a página já abriu */
 const Celular3D = dynamic(() => import('./Celular3D'), { ssr: false });
@@ -47,7 +49,8 @@ function VideoFundo({ src, capa }) {
   return null;
 }
 
-export default function Site() {
+export default function Site({ lang = 'pt' }) {
+  const t = T[lang], en = lang === 'en';
   const [cfg, setCfg] = useState(CFG_PADRAO);
   const [itens, setItens] = useState([]);
   const [player, setPlayer] = useState(null);
@@ -55,6 +58,9 @@ export default function Site() {
 
   const [numAuto, setNumAuto] = useState(null);
   useEffect(() => { carregar().then(({ cfg, itens, numeros }) => { setCfg(cfg); setItens(itens); setNumAuto(numeros); rastreadores(cfg); }); }, []);
+  /* textos digitados no sistema são em português: no /en ficam os padrões em inglês */
+  const txt = en ? {} : cfg;
+  useEffect(() => { document.documentElement.lang = t.lang; }, [t.lang]);
 
   /* contagem própria: visita e "engajou" (rolou metade da página) */
   useEffect(() => {
@@ -71,20 +77,20 @@ export default function Site() {
 
   const de = t => itens.filter(i => i.tipo === t);
   const videos = de('video'), depo = de('depoimento'), clientes = de('cliente');
-  const servicos = de('servico').length ? de('servico') : SERVICOS_PADRAO;
-  const palavras = (cfg.palavras && cfg.palavras.length ? cfg.palavras : CFG_PADRAO.palavras);
+  const servicos = !en && de('servico').length ? de('servico') : en ? SERVICOS_EN : SERVICOS_PADRAO;
+  const palavras = (txt.palavras && txt.palavras.length ? txt.palavras : t.palavras);
   const heroi = videos.find(v => v.destaque && tipoLink(v.video_url) === 'arquivo') || videos.find(v => tipoLink(v.video_url) === 'arquivo');
   const wpp = useMemo(() => linkWpp(cfg), [cfg]);
   const insta = 'https://www.instagram.com/' + String(cfg.instagram || 'b7.agencia').replace(/^@/, '') + '/';
   const regioes = (cfg.regioes || []).filter(Boolean);
   /* números: os digitados em Site → Página; sem eles, os reais do sistema */
   const redondo = n => n >= 100 ? '+' + Math.floor(n / 10) * 10 : n > 0 ? '+' + n : null;
-  const numerosManuais = (cfg.numeros || []).filter(n => n && n.valor);
+  const numerosManuais = (txt.numeros || []).filter(n => n && n.valor);
   const numeros = numerosManuais.length ? numerosManuais : numAuto ? [
-    { valor: redondo(numAuto.videos), rotulo: 'vídeos editados e entregues' },
-    { valor: redondo(numAuto.posts), rotulo: 'posts publicados' },
-    { valor: redondo(numAuto.artes), rotulo: 'artes criadas' },
-    { valor: numAuto.marcas > 0 ? String(numAuto.marcas) : null, rotulo: 'marcas atendidas agora' }
+    { valor: redondo(numAuto.videos), rotulo: t.num.videos },
+    { valor: redondo(numAuto.posts), rotulo: t.num.posts },
+    { valor: redondo(numAuto.artes), rotulo: t.num.artes },
+    { valor: numAuto.marcas > 0 ? String(numAuto.marcas) : null, rotulo: t.num.marcas }
   ].filter(n => n.valor) : [];
   /* tela do celular 3D: vídeos enviados (arquivo) e, depois, os clientes do site */
   const midiasCelular = useMemo(() => {
@@ -99,17 +105,17 @@ export default function Site() {
   /* personalização feita no Sistema B7 → Site → Página (vazio = padrão) */
   const mostra = k => !(cfg.secoes && cfg.secoes[k] === false);
   const lista = (v, pad) => (Array.isArray(v) && v.filter(Boolean).length ? v.filter(Boolean) : pad);
-  const fita = lista(cfg.fita, ['VENDER', 'VIRALIZAR', 'PERFORMAR', 'ROTEIRO', 'GRAVAÇÃO', 'EDIÇÃO', 'CRIATIVOS', 'ANÚNCIOS']).map(w => String(w).toUpperCase());
-  const manifesto = lista(cfg.manifesto, ['PRENDA A ATENÇÃO.', 'CONTE A SUA HISTÓRIA.', 'FAÇA VENDER.']);
-  const notas = lista(cfg.notas, ['Os primeiros 3 segundos decidem se a pessoa fica.', 'Vídeo bom é o que traz cliente, não só curtida.']);
-  const cta = cfg.cta || 'Quero vídeos assim';
-  const sobreTexto = cfg.sobre_texto ? String(cfg.sobre_texto).split(/\n\s*\n/).map(t => t.trim()).filter(Boolean) : null;
+  const fita = lista(txt.fita, t.fita).map(w => String(w).toUpperCase());
+  const manifesto = lista(txt.manifesto, t.manifesto);
+  const notas = lista(txt.notas, t.notas);
+  const cta = txt.cta || t.cta;
+  const sobreTexto = txt.sobre_texto ? String(txt.sobre_texto).split(/\n\s*\n/).map(x => x.trim()).filter(Boolean) : null;
   const insta_ = () => evento('Instagram');
   /* menu: só as seções que existem no site */
-  const NAV = [['inicio', 'Início'], ['sobre', 'Sobre', mostra('sobre')], ['trabalhos', 'Trabalhos', mostra('trabalhos')], ['processo', 'Processo', mostra('processo')],
-    ['servicos', 'Serviços', mostra('servicos')], ['depoimentos', 'Depoimentos', mostra('depoimentos') && itens.some(i => i.tipo === 'depoimento')],
-    ['clientes', 'Clientes', mostra('clientes') && itens.some(i => i.tipo === 'cliente')], ['faq', 'Dúvidas', mostra('faq')], ['contato', 'Contato']]
-    .filter(n => n[2] !== false).map(n => [n[0], n[1]]);
+  const NAV = [['inicio'], ['sobre', mostra('sobre')], ['trabalhos', mostra('trabalhos')], ['processo', mostra('processo')],
+    ['servicos', mostra('servicos')], ['depoimentos', mostra('depoimentos') && itens.some(i => i.tipo === 'depoimento')],
+    ['clientes', mostra('clientes') && itens.some(i => i.tipo === 'cliente')], ['faq', mostra('faq')], ['contato']]
+    .filter(n => n[1] !== false).map(n => [n[0], t.nav[n[0]]]);
   const NAV_PILULA = NAV.filter(([id]) => ['inicio', 'trabalhos', 'processo', 'servicos', 'depoimentos'].includes(id));
 
   /* seção ativa na pílula + aparecer ao rolar */
@@ -255,21 +261,8 @@ export default function Site() {
     addEventListener('keydown', k); return () => removeEventListener('keydown', k);
   }, [player, tocaveis.length]);
 
-  const PASSOS = (Array.isArray(cfg.passos) && cfg.passos.length) ? cfg.passos.slice(0, 6).map(x => [x.t, x.d]) : [
-    ['Diagnóstico', 'Entendemos o seu negócio, o seu público e o que precisa vender.'],
-    ['Roteiro', 'Ganchos, falas e cenas pensados para prender a atenção e converter.'],
-    ['Gravação', 'Captação profissional, com direção para você ficar à vontade na câmera.'],
-    ['Edição', 'Cortes no ritmo das redes, legendas, trilha e a identidade da marca.'],
-    ['Publicação', 'Versões para Reels, TikTok, Stories e anúncios, prontas para subir.'],
-    ['Performance', 'Olhamos o que funcionou e ajustamos o próximo vídeo para vender mais.']
-  ];
-  const FAQ = (Array.isArray(cfg.faq) && cfg.faq.length) ? cfg.faq.map(x => [x.p, x.r]) : [
-    ['Vocês gravam na minha cidade?', regioes.length ? 'Gravamos presencialmente em ' + regioes.join(', ') + '. Edição e criativos atendemos todo o Brasil.' : 'Fale com a gente pelo WhatsApp: dizemos na hora se a sua cidade está na nossa rota de gravação. Edição e criativos atendemos todo o Brasil.'],
-    ['Eu preciso saber falar na câmera?', 'Não. A gente escreve o roteiro, dirige a gravação e deixa você à vontade. Muitos clientes nunca tinham gravado antes.'],
-    ['Quanto tempo leva para o vídeo ficar pronto?', 'Depende do volume, mas o normal é receber os primeiros vídeos editados poucos dias depois da gravação.'],
-    ['Os vídeos servem para anúncio?', 'Sim. Entregamos versões pensadas para tráfego pago, com ganchos diferentes para testar e achar o que vende mais.'],
-    ['Como funciona o orçamento?', 'Você conta o que precisa, a gente entende o seu momento e monta um plano do tamanho do seu negócio. Sem compromisso.']
-  ];
+  const PASSOS = (Array.isArray(txt.passos) && txt.passos.length) ? txt.passos.slice(0, 6).map(x => [x.t, x.d]) : t.passos;
+  const FAQ = (Array.isArray(txt.faq) && txt.faq.length) ? txt.faq.map(x => [x.p, x.r]) : t.faq(regioes);
 
   return (
     <>
@@ -284,18 +277,21 @@ export default function Site() {
         <Visor />
         <header className="heroi-topo">
           <img src="/marca/logo-white-300.png" alt="Branding7" width="132" height="52" />
-          <a className="topo-link" href={insta} target="_blank" rel="noopener" onClick={insta_}>@{String(cfg.instagram || 'b7.agencia').replace(/^@/, '')}</a>
+          <span className="topo-dir">
+            <a className="topo-lang" href={t.outra} hrefLang={en ? 'pt-BR' : 'en'} aria-label={t.outraRot}>{t.outraNome}</a>
+            <a className="topo-link" href={insta} target="_blank" rel="noopener" onClick={insta_}>@{String(cfg.instagram || 'b7.agencia').replace(/^@/, '')}</a>
+          </span>
         </header>
         <div className="heroi-base">
-          <h1 aria-label={'O vídeo que faz você ' + (palavras[0] || 'vender') + '.'}>
-            <span className="h1-l" aria-hidden="true"><Letras texto="O vídeo que faz" de={0} /></span>
-            <span className="h1-l" aria-hidden="true"><Letras texto="você" de={15} />{' '}<Giro palavras={palavras} />.</span>
+          <h1 aria-label={t.tituloAria(palavras[0] || '')}>
+            <span className="h1-l" aria-hidden="true"><Letras texto={t.titulo1} de={0} /></span>
+            <span className="h1-l" aria-hidden="true"><Letras texto={t.titulo2} de={15} />{' '}<Giro palavras={palavras} />.</span>
           </h1>
           <div className="heroi-lado">
-            <p>{cfg.subtitulo}</p>
+            <p>{txt.subtitulo || t.subtitulo}</p>
             <div className="heroi-acoes">
-              <Botao href={wpp} alvo onClick={() => evento('Contact', { canal: 'whatsapp' })} claro>Solicitar orçamento</Botao>
-              {mostra('trabalhos') && <a className="pilula-simples" href="#trabalhos">Trabalhos</a>}
+              <Botao href={wpp} alvo onClick={() => evento('Contact', { canal: 'whatsapp' })} claro>{t.orcamento}</Botao>
+              {mostra('trabalhos') && <a className="pilula-simples" href="#trabalhos">{t.trabalhosBt}</a>}
             </div>
           </div>
         </div>
@@ -320,7 +316,7 @@ export default function Site() {
 
       {/* ============ NÚMEROS ============ */}
       {numeros.length > 0 && (
-        <section className="numeros" aria-label="Números da Branding7">
+        <section className="numeros" aria-label={t.numerosAria}>
           <div className="lim numeros-in">
             {numeros.slice(0, 4).map((n, k) => (
               <div className="numero aparece" key={k}>
@@ -338,27 +334,27 @@ export default function Site() {
           <div className="sobre-topo aparece">
             <span className="sobre-cartao">
               <span className="sobre-av"><img src="/marca/symbol-white.png" alt="" width="40" height="47" /></span>
-              <span><b>Branding7</b><small>Vídeo, criativos e marketing digital</small></span>
+              <span><b>Branding7</b><small>{t.sobreCartao}</small></span>
             </span>
             <span className="sobre-linha" />
           </div>
-          <h2 className="sobre-titulo aparece">{cfg.sobre_titulo ? cfg.sobre_titulo : <>Muito além de <em>gravar um vídeo</em>.</>}</h2>
-          <TextoAcende paragrafos={sobreTexto || ['Na Branding7, cada vídeo nasce de uma estratégia: quem vai assistir, o que precisa sentir e o que tem que fazer depois. Roteiro, gravação e edição trabalham juntos para isso.',
-            'O resultado é conteúdo que a sua marca tem orgulho de postar e que faz o cliente chamar no WhatsApp.']} />
+          <h2 className="sobre-titulo aparece">{txt.sobre_titulo ? txt.sobre_titulo : t.sobreTitulo}</h2>
+          <TextoAcende paragrafos={sobreTexto || t.sobreTexto} />
           <div className="sobre-pe aparece">
             <Botao href={wpp} alvo onClick={() => evento('Contact', { canal: 'whatsapp' })}>{cta}</Botao>
-            <span className="sobre-selos"><span>Roteiro</span><span>Gravação</span><span>Edição</span><span>Anúncios</span></span>
+            <a className="pilula-simples escura" href={t.sobrePag}>{t.conhecaEquipe}</a>
+            <span className="sobre-selos">{t.selos.map(x => <span key={x}>{x}</span>)}</span>
           </div>
         </div>
       </section>}
 
       {/* ============ TRABALHOS: Reels lado a lado ============ */}
       {mostra('trabalhos') && <section className="trabalhos" id="trabalhos">
-        {videos.length > 0 ? <Obras videos={videos} abrir={abrir} insta={insta} insta_={insta_} /> : (
+        {videos.length > 0 ? <Obras videos={videos} abrir={abrir} insta={insta} insta_={insta_} t={t} /> : (
           <div className="trabalhos-vazio lim aparece">
-            <p className="rotulo">Projetos selecionados</p>
-            <h2>Os vídeos dos nossos clientes <em>estão chegando aqui</em>.</h2>
-            <Botao href={insta} alvo onClick={insta_}>Ver no Instagram</Botao>
+            <p className="rotulo">{t.projetos}</p>
+            <h2>{t.projetosVazio}</h2>
+            <Botao href={insta} alvo onClick={insta_}>{t.verInsta}</Botao>
             {midiasCelular.length > 0 && <div className="trilho-reels" aria-hidden="true"><div className="trilho-in">{[0, 1].map(r => midiasCelular.map((m, k) => <Reel key={r + '-' + k} m={m} />))}</div></div>}
           </div>
         )}
@@ -368,23 +364,23 @@ export default function Site() {
       {mostra('processo') && <section className="processo" id="processo">
         <div className="processo-palco">
           <div className="processo-ceu" aria-hidden="true" />
-          <p className="rotulo centro">Processo de criação</p>
-          <h2 className="processo-titulo" aria-label="Do roteiro ao resultado: seis passos">DO ROTEIRO<br />AO RESULTADO<br /><em>SEIS PASSOS</em></h2>
+          <p className="rotulo centro">{t.processoRot}</p>
+          <h2 className="processo-titulo" aria-label={t.processoAria}>{t.processoT[0]}<br />{t.processoT[1]}<br /><em>{t.processoT[2]}</em></h2>
           <div className="processo-centro" ref={centroRef}>{perto3d && <Celular3D progresso={progressoProcesso} midias={midiasCelular.filter(m => m.video || m.capa)} />}</div>
           <ol className="processo-passos">
             {PASSOS.map(([t, d], k) => (
               <li key={t} style={{ '--k': k }}><span>{String(k + 1).padStart(2, '0')}</span><b>{t}</b><p>{d}</p></li>
             ))}
           </ol>
-          <p className="processo-pe">✦ Do primeiro papo ao vídeo no ar</p>
+          <p className="processo-pe">{t.processoPe}</p>
         </div>
       </section>}
 
       {/* ============ SERVIÇOS ============ */}
       {mostra('servicos') && <section className="servicos" id="servicos">
         <div className="lim">
-          <p className="rotulo aparece">Serviços</p>
-          <h2 className="aparece">Tudo que o seu vídeo precisa para <em>performar</em>.</h2>
+          <p className="rotulo aparece">{t.servicosRot}</p>
+          <h2 className="aparece">{t.servicosTit}</h2>
           <div className="servicos-lista">
             {servicos.map((s, k) => (
               <article className="servico aparece luz" key={s.id || k}>
@@ -401,13 +397,13 @@ export default function Site() {
       {mostra('depoimentos') && depo.length > 0 && (
         <section className="depoimentos" id="depoimentos">
           <div className="lim">
-            <p className="rotulo aparece">Depoimentos</p>
-            <h2 className="aparece">Quem fez, <em>recomenda</em>.</h2>
+            <p className="rotulo aparece">{t.depoRot}</p>
+            <h2 className="aparece">{t.depoTit}</h2>
             <div className="depo-lista">
               {depo.map(d => d.video_url && d.texto ? (
                 /* vídeo + a fala do cliente lado a lado */
                 <figure className="depo-combo aparece" key={d.id}>
-                  <button className="depo-video" onClick={() => abrir(d.video_url)} aria-label={'Ver o depoimento de ' + (d.cliente_nome || '')}>
+                  <button className="depo-video" onClick={() => abrir(d.video_url)} aria-label={t.depoVer(d.cliente_nome || '')}>
                     <VideoFundo src={d.video_url} capa={d.capa_url} />
                     <span className="depo-play"><Play /></span>
                   </button>
@@ -416,9 +412,9 @@ export default function Site() {
                     <blockquote>{d.texto}</blockquote>
                     <figcaption>
                       <span className="depo-av">{d.avatar_url ? <img src={d.avatar_url} alt="" /> : (d.cliente_nome || '?').charAt(0)}</span>
-                      <span><b>{d.cliente_nome}</b><small>{d.cliente_arroba ? '@' + String(d.cliente_arroba).replace(/^@/, '') : (d.titulo || 'Cliente Branding7')}</small></span>
+                      <span><b>{d.cliente_nome}</b><small>{d.cliente_arroba ? '@' + String(d.cliente_arroba).replace(/^@/, '') : (d.titulo || t.depoCliente)}</small></span>
                     </figcaption>
-                    <button className="depo-assistir" onClick={() => abrir(d.video_url)}><i><Play /></i>Assistir o depoimento</button>
+                    <button className="depo-assistir" onClick={() => abrir(d.video_url)}><i><Play /></i>{t.depoAssistir}</button>
                   </div>
                 </figure>
               ) : d.video_url ? (
@@ -435,9 +431,9 @@ export default function Site() {
               ))}
               <div className="depo-cta aparece">
                 <span className="depo-cta-aspas">“</span>
-                <b>A próxima história pode ser a da sua marca.</b>
-                <p>Roteiro, gravação e edição para o seu vídeo vender.</p>
-                <a className="pilula" href="#contato"><span>Quero meu orçamento</span><i><Seta /></i></a>
+                <b>{t.depoCtaB}</b>
+                <p>{t.depoCtaP}</p>
+                <a className="pilula" href="#contato"><span>{t.depoCtaBt}</span><i><Seta /></i></a>
               </div>
             </div>
           </div>
@@ -446,8 +442,8 @@ export default function Site() {
 
       {/* ============ CLIENTES ============ */}
       {mostra('clientes') && clientes.length > 0 && (
-        <section className="clientes" id="clientes" aria-label="Clientes">
-          <p className="rotulo centro">Marcas que confiam na Branding7</p>
+        <section className="clientes" id="clientes" aria-label={t.clientesAria}>
+          <p className="rotulo centro">{t.clientesRot}</p>
           <div className="clientes-faixa"><div className="clientes-in">
             {[0, 1].map(r => clientes.map(c => c.capa_url
               ? <figure className="cli-logo" key={r + c.id} title={c.cliente_nome || c.titulo || ''}><img src={c.capa_url} alt={r ? '' : (c.cliente_nome || c.titulo || '')} /></figure>
@@ -460,7 +456,7 @@ export default function Site() {
       {mostra('regioes') && regioes.length > 0 && (
         <section className="regioes">
           <div className="lim regioes-in">
-            <div><p className="rotulo aparece">Onde atendemos</p><h2 className="aparece">Gravação presencial na <em>sua cidade</em>.</h2><p className="aparece">Edição e criativos para todo o Brasil.</p></div>
+            <div><p className="rotulo aparece">{t.regioesRot}</p><h2 className="aparece">{t.regioesTit}</h2><p className="aparece">{t.regioesP}</p></div>
             <ul>{regioes.map(r => <li key={r} className="aparece">{r}</li>)}</ul>
           </div>
         </section>
@@ -469,7 +465,7 @@ export default function Site() {
       {/* ============ PERGUNTAS ============ */}
       {mostra('faq') && <section className="faq" id="faq">
         <div className="lim faq-in">
-          <div><p className="rotulo aparece">Dúvidas</p><h2 className="aparece">Antes de começar, <em>tire suas dúvidas</em>.</h2></div>
+          <div><p className="rotulo aparece">{t.faqRot}</p><h2 className="aparece">{t.faqTit}</h2></div>
           <div className="faq-lista">
             {FAQ.map(([p, r], k) => (
               <details key={k} className="aparece"><summary>{p}<i aria-hidden="true">+</i></summary><p>{r}</p></details>
@@ -479,47 +475,51 @@ export default function Site() {
       </section>}
 
       {/* ============ CONTATO ============ */}
-      <Contato cfg={cfg} wpp={wpp} />
+      <Contato cfg={cfg} wpp={wpp} t={t} txt={txt} />
 
       <footer className="rodape">
         <div className="creditos" aria-hidden="true"><span>BRANDING</span><span className="c7">7</span></div>
         <div className="lim rodape-in">
           <img src="/marca/logo-white-300.png" alt="Branding7" width="120" height="47" />
-          <nav aria-label="Rodapé">
+          <nav aria-label={t.rodapeAria}>
+            <a href={t.sobrePag}>{t.sobreNos}</a>
             <a href={insta} target="_blank" rel="noopener" onClick={insta_}>Instagram</a>
             <a href={wpp} target="_blank" rel="noopener">WhatsApp</a>
-            <a href="https://sistema.branding7.com.br/">Área do cliente</a>
+            <a href="https://sistema.branding7.com.br/">{t.areaCliente}</a>
+            <a href={t.privPag}>{t.privacidade}</a>
+            <a href={t.outra} hrefLang={en ? 'pt-BR' : 'en'}>{t.outraRot}</a>
           </nav>
           <small>© {new Date().getFullYear()} Branding7 · Núcleo7</small>
         </div>
       </footer>
 
-      <MenuCelular wpp={wpp} insta={insta} nav={NAV} />
+      <MenuCelular wpp={wpp} insta={insta} nav={NAV} t={t} />
       <Cinema />
+      <Cookies t={t} cfg={cfg} />
 
       {/* navegação em pílula flutuante */}
-      <nav className="pilula-nav" aria-label="Principal">
+      <nav className="pilula-nav" aria-label={t.navAria}>
         <img src="/marca/symbol-white.png" alt="" width="20" height="24" />
         {NAV_PILULA.map(([id, r]) =>
           <a key={id} href={'#' + id} className={ativo === id ? 'on' : ''}>{r}</a>)}
-        <a className="pn-entrar" href="https://sistema.branding7.com.br/"><IcEntrar />Entrar</a>
-        <a className="pn-cta" href="#contato">Orçamento<i><Seta /></i></a>
+        <a className="pn-entrar" href="https://sistema.branding7.com.br/"><IcEntrar />{t.entrar}</a>
+        <a className="pn-cta" href="#contato">{t.orcCurto}<i><Seta /></i></a>
       </nav>
 
-      <BalaoWpp wpp={wpp} cfg={cfg} />
-      <a className="wpp-flutua" href={wpp} target="_blank" rel="noopener" aria-label="Falar no WhatsApp" onClick={() => evento('Contact', { canal: 'whatsapp' })}><Zap /></a>
+      <BalaoWpp wpp={wpp} cfg={cfg} t={t} />
+      <a className="wpp-flutua" href={wpp} target="_blank" rel="noopener" aria-label={t.wppAria} onClick={() => evento('Contact', { canal: 'whatsapp' })}><Zap /></a>
 
       {player && (() => {
         const v = player.i != null ? tocaveis[player.i] : null, url = v ? v.video_url : player.url;
         let x0 = null;
         return (
-          <div className="player" role="dialog" aria-modal="true" aria-label="Vídeo" onClick={e => { if (e.target === e.currentTarget) setPlayer(null); }}
+          <div className="player" role="dialog" aria-modal="true" aria-label={t.video} onClick={e => { if (e.target === e.currentTarget) setPlayer(null); }}
             onTouchStart={e => { x0 = e.touches[0].clientX; }} onTouchEnd={e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 60) passar(dx < 0 ? 1 : -1); x0 = null; }}>
-            <button className="player-x" onClick={() => setPlayer(null)} aria-label="Fechar">×</button>
-            {v && tocaveis.length > 1 && <button className="player-seta ant" onClick={() => passar(-1)} aria-label="Vídeo anterior"><Seta /></button>}
+            <button className="player-x" onClick={() => setPlayer(null)} aria-label={t.fechar}>×</button>
+            {v && tocaveis.length > 1 && <button className="player-seta ant" onClick={() => passar(-1)} aria-label={t.videoAnt}><Seta /></button>}
             <div className="player-palco" key={url}>
               <div className="player-cx">
-                {tipoLink(url) === 'arquivo' ? <video src={url} controls autoPlay playsInline /> : <iframe src={embed(url)} allow="autoplay; encrypted-media; fullscreen" allowFullScreen title="Vídeo" />}
+                {tipoLink(url) === 'arquivo' ? <video src={url} controls autoPlay playsInline /> : <iframe src={embed(url)} allow="autoplay; encrypted-media; fullscreen" allowFullScreen title={t.video} />}
               </div>
               {v && (
                 <aside className="player-info">
@@ -536,12 +536,12 @@ export default function Site() {
                     {v.comentarios && <span><IcBalao />{v.comentarios}</span>}
                   </div>}
                   {v.resultado && <span className="obra-res"><IcSobe />{v.resultado}</span>}
-                  <a className="pilula" href={linkWpp(cfg, 'Vi o vídeo ' + (v.cliente_nome ? 'da ' + v.cliente_nome : 'de vocês') + ' no site e quero um assim.')} target="_blank" rel="noopener"
-                    onClick={() => evento('Contact', { canal: 'whatsapp', origem: 'player' })}><span>Quero um vídeo assim</span><i><Seta /></i></a>
+                  <a className="pilula" href={linkWpp(cfg, t.wppVi(v.cliente_nome))} target="_blank" rel="noopener"
+                    onClick={() => evento('Contact', { canal: 'whatsapp', origem: 'player' })}><span>{t.queroAssim}</span><i><Seta /></i></a>
                 </aside>
               )}
             </div>
-            {v && tocaveis.length > 1 && <button className="player-seta prox" onClick={() => passar(1)} aria-label="Próximo vídeo"><Seta /></button>}
+            {v && tocaveis.length > 1 && <button className="player-seta prox" onClick={() => passar(1)} aria-label={t.videoProx}><Seta /></button>}
           </div>
         );
       })()}
@@ -549,90 +549,190 @@ export default function Site() {
   );
 }
 
-const INTERESSES_PADRAO = ['Vídeos para Reels e TikTok', 'Criativos para anúncios', 'Gravação e edição', 'Casamento', 'Evento', 'Vídeo institucional',
-  'Gestão de redes sociais', 'Ainda não sei, quero conversar'];
+const SERVICOS_EN = [
+  { icone: '01', titulo: 'Reels and TikTok videos', texto: 'Vertical content with a strong hook, pacing and captions, made to hold attention and engage.' },
+  { icone: '02', titulo: 'Ad creatives', texto: 'Versions made for paid traffic: hook tests, calls to action and formats that convert.' },
+  { icone: '03', titulo: 'Professional shooting', texto: 'Crew, camera, lighting and direction. You just show up; we handle the rest.' },
+  { icone: '04', titulo: 'Editing and post-production', texto: 'Cuts paced for social media, music, captions and your brand identity.' },
+  { icone: '05', titulo: 'Script and strategy', texto: 'Editorial lines and scripts that speak to your audience and lead to sales.' },
+  { icone: '06', titulo: 'Social media management', texto: 'Planning, publishing and tracking results month after month.' }
+];
 
-function Contato({ cfg, wpp }) {
+function Contato({ cfg, wpp, t, txt }) {
   const [msg, setMsg] = useState({ t: '', c: '' });
   const [enviando, setEnviando] = useState(false);
   const [tel, setTel] = useState('');
+  const [aba, setAba] = useState('orc');
+  const [agenda, setAgenda] = useState(null);
   const abriu = useRef(false);
-  const interesses = (Array.isArray(cfg.interesses) && cfg.interesses.filter(Boolean).length) ? cfg.interesses.filter(Boolean) : INTERESSES_PADRAO;
-  const mascara = v => {
-    const d = v.replace(/\D/g, '').slice(0, 13), n = d.startsWith('55') && d.length > 11 ? d.slice(2) : d;
-    return n.length > 6 ? `(${n.slice(0, 2)}) ${n.slice(2, n.length - 4)}-${n.slice(-4)}` : n.length > 2 ? `(${n.slice(0, 2)}) ${n.slice(2)}` : n;
-  };
+  const interesses = (Array.isArray(txt.interesses) && txt.interesses.filter(Boolean).length) ? txt.interesses.filter(Boolean) : t.interesses;
+  /* a aba "Marcar uma conversa" só aparece se a agenda estiver ligada no sistema */
+  useEffect(() => { horariosLivres().then(setAgenda); }, []);
+  /* links "#agendar" abrem direto a aba da agenda */
+  useEffect(() => {
+    const f = e => { const a = e.target.closest && e.target.closest('a[href$="#agendar"]'); if (a) setAba('agenda'); };
+    document.addEventListener('click', f, true);
+    if (location.hash === '#agendar') setAba('agenda');
+    return () => document.removeEventListener('click', f, true);
+  }, []);
+  const temAgenda = agenda && agenda.ativo;
   async function enviar(e) {
     e.preventDefault();
     const d = Object.fromEntries(new FormData(e.currentTarget));
-    if ((d.nome || '').trim().length < 2) return setMsg({ t: 'Coloque o seu nome.', c: 'erro' });
-    if ((d.whatsapp || '').replace(/\D/g, '').length < 10) return setMsg({ t: 'Coloque o WhatsApp com DDD.', c: 'erro' });
+    if ((d.nome || '').trim().length < 2) return setMsg({ t: t.eNome, c: 'erro' });
+    if ((d.whatsapp || '').replace(/\D/g, '').length < 10) return setMsg({ t: t.eWpp, c: 'erro' });
     setEnviando(true); setMsg({ t: '', c: '' });
     try {
       await enviarLead(d, origemDaVisita());
       evento('Lead', { interesse: d.interesse || '' });
-      setMsg({ t: 'Recebido! Abrindo o WhatsApp para você falar com o comercial…', c: 'ok' });
-      const resumo = `Sou ${d.nome.trim()}${d.empresa ? ', da ' + d.empresa.trim() : ''}${d.cidade ? ' (' + d.cidade.trim() + ')' : ''}.${d.interesse ? ' Tenho interesse em: ' + d.interesse + '.' : ''}`;
-      setTimeout(() => window.open(linkWpp(cfg, resumo), '_blank', 'noopener'), 700);
+      setMsg({ t: t.recebido, c: 'ok' });
+      setTimeout(() => window.open(linkWpp(cfg, t.resumo(d)), '_blank', 'noopener'), 700);
       e.currentTarget && e.currentTarget.reset(); setTel('');
     } catch (err) { setMsg({ t: 'erro-envio', c: 'erro' }); }
     setEnviando(false);
   }
   return (
     <section className="contato" id="contato">
+      <span id="agendar" className="ancora" aria-hidden="true" />
       <div className="contato-luz" aria-hidden="true" />
       <div className="lim contato-in">
         <div className="contato-tx">
-          <p className="rotulo">Vamos conversar</p>
-          <h2>Seu negócio pode <em>ir mais longe</em>.</h2>
-          <p>Conte um pouco do que você precisa. O nosso comercial responde rapidinho pelo WhatsApp.</p>
+          <p className="rotulo">{t.contatoRot}</p>
+          <h2>{t.contatoTit}</h2>
+          <p>{t.contatoP}</p>
           <a className="wpp-cartao" href={wpp} target="_blank" rel="noopener" onClick={() => evento('Contact', { canal: 'whatsapp' })}>
             <span className="wpp-av">{(cfg.whatsapp_nome || 'G').charAt(0)}</span>
             <span><b>{cfg.whatsapp_nome}</b><small>{cfg.whatsapp_cargo} · Branding7</small></span>
             <span className="wpp-ic"><Zap /></span>
           </a>
         </div>
-        <form className="form" onSubmit={enviar} noValidate onFocus={() => { if (!abriu.current) { abriu.current = true; evento('Formulario'); } }}>
-          <h3>Pedir um orçamento</h3>
-          <p className="form-dica">Preencha em poucas palavras o que você precisa. O comercial responde no seu WhatsApp.</p>
-          <label>Seu nome<input name="nome" autoComplete="name" required maxLength={120} /></label>
-          <label>WhatsApp com DDD<input name="whatsapp" type="tel" inputMode="tel" autoComplete="tel" required maxLength={30} placeholder="(77) 99999-9999" value={tel} onChange={e => setTel(mascara(e.target.value))} /></label>
-          <div className="form-2">
-            <label>Empresa<input name="empresa" autoComplete="organization" maxLength={120} /></label>
-            <label>Cidade<input name="cidade" autoComplete="address-level2" maxLength={120} /></label>
-          </div>
-          <label>O que você precisa?
-            <select name="interesse" defaultValue="">
-              <option value="">Escolha uma opção</option>
-              {interesses.map(o => <option key={o}>{o}</option>)}
-            </select>
-          </label>
-          <label>Conte rapidinho <small>(opcional)</small><textarea name="mensagem" rows={3} maxLength={1000} placeholder="Ex.: casamento dia 20/12 em Vitória da Conquista, quero o vídeo de melhores momentos." /></label>
-          <button className="pilula clara larga" type="submit" disabled={enviando}><span>{enviando ? 'Enviando…' : 'Enviar e falar com o comercial'}</span><i><Seta /></i></button>
-          <p className={'form-msg ' + msg.c} role="status">
-            {msg.t === 'erro-envio' ? <>Não foi possível enviar agora. <a href={wpp} target="_blank" rel="noopener">Fale direto no WhatsApp</a>.</> : msg.t}
-          </p>
-        </form>
+        <div className="contato-cx">
+          {temAgenda && <div className="contato-abas" role="tablist">
+            <button role="tab" aria-selected={aba === 'orc'} className={aba === 'orc' ? 'on' : ''} onClick={() => setAba('orc')}>{t.abaOrc}</button>
+            <button role="tab" aria-selected={aba === 'agenda'} className={aba === 'agenda' ? 'on' : ''} onClick={() => setAba('agenda')}><IcAgenda />{t.abaAgenda}</button>
+          </div>}
+          {temAgenda && aba === 'agenda' ? <Agenda agenda={agenda} recarregar={() => horariosLivres().then(setAgenda)} t={t} cfg={cfg} interesses={interesses} mascara={mascara} wpp={wpp} /> : (
+          <form className="form" onSubmit={enviar} noValidate onFocus={() => { if (!abriu.current) { abriu.current = true; evento('Formulario'); } }}>
+            <h3>{t.formTit}</h3>
+            <p className="form-dica">{t.formDica}</p>
+            <label>{t.fNome}<input name="nome" autoComplete="name" required maxLength={120} /></label>
+            <label>{t.fWpp}<input name="whatsapp" type="tel" inputMode="tel" autoComplete="tel" required maxLength={30} placeholder="(77) 99999-9999" value={tel} onChange={e => setTel(mascara(e.target.value))} /></label>
+            <div className="form-2">
+              <label>{t.fEmpresa}<input name="empresa" autoComplete="organization" maxLength={120} /></label>
+              <label>{t.fCidade}<input name="cidade" autoComplete="address-level2" maxLength={120} /></label>
+            </div>
+            <label>{t.fPrecisa}
+              <select name="interesse" defaultValue="">
+                <option value="">{t.fEscolha}</option>
+                {interesses.map(o => <option key={o}>{o}</option>)}
+              </select>
+            </label>
+            <label>{t.fConte} <small>{t.opcional}</small><textarea name="mensagem" rows={3} maxLength={1000} placeholder={t.fContePh} /></label>
+            <button className="pilula clara larga" type="submit" disabled={enviando}><span>{enviando ? t.enviando : t.enviar}</span><i><Seta /></i></button>
+            <p className={'form-msg ' + msg.c} role="status">
+              {msg.t === 'erro-envio' ? <>{t.erroEnvio} <a href={wpp} target="_blank" rel="noopener">{t.falarDireto}</a>.</> : msg.t}
+            </p>
+          </form>)}
+        </div>
       </div>
     </section>
   );
 }
 
-/* Pixel da Meta e Google Analytics: os códigos ficam no sistema (tela Site) */
-function rastreadores(cfg) {
-  if (typeof window === 'undefined' || window.__b7Rastro) return; window.__b7Rastro = 1;
-  const px = String(cfg.pixel_meta || '').replace(/\D/g, '');
-  if (px) {
-    !function (f, b, e, v, n, t, s) { if (f.fbq) return; n = f.fbq = function () { n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments); }; if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = '2.0'; n.queue = []; t = b.createElement(e); t.async = !0; t.src = v; s = b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t, s); }(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
-    window.fbq('init', px); window.fbq('track', 'PageView');
-  }
-  const ga = String(cfg.ga4 || '').trim();
-  if (/^G-[A-Z0-9]+$/i.test(ga)) {
-    const s = document.createElement('script'); s.async = true; s.src = 'https://www.googletagmanager.com/gtag/js?id=' + ga; document.head.appendChild(s);
-    window.dataLayer = window.dataLayer || []; window.gtag = function () { window.dataLayer.push(arguments); };
-    window.gtag('js', new Date()); window.gtag('config', ga);
-  }
+/* telefone com máscara brasileira; número estrangeiro (com +) fica como digitado */
+function mascara(v) {
+  if (/^\s*\+/.test(v) && !/^\s*\+?55/.test(v)) return v.replace(/[^\d+\s()-]/g, '').slice(0, 24);
+  const d = v.replace(/\D/g, '').slice(0, 13), n = d.startsWith('55') && d.length > 11 ? d.slice(2) : d;
+  return n.length > 6 ? `(${n.slice(0, 2)}) ${n.slice(2, n.length - 4)}-${n.slice(-4)}` : n.length > 2 ? `(${n.slice(0, 2)}) ${n.slice(2)}` : n;
 }
+
+/* agendamento: o visitante escolhe o dia e o horário livres (Sistema B7 →
+   Site → Agenda) e a conversa já entra na agenda e nos contatos */
+function Agenda({ agenda, recarregar, t, cfg, interesses, wpp }) {
+  const tz = 'America/Sao_Paulo';
+  const dias = useMemo(() => {
+    const m = new Map();
+    (agenda.horarios || []).forEach(h => {
+      const d = new Date(h), k = d.toLocaleDateString('en-CA', { timeZone: tz });
+      if (!m.has(k)) m.set(k, []); m.get(k).push(h);
+    });
+    return [...m.entries()];
+  }, [agenda]);
+  const [dia, setDia] = useState(null);
+  const [hora, setHora] = useState(null);
+  const [tel, setTel] = useState('');
+  const [msg, setMsg] = useState({ t: '', c: '' });
+  const [enviando, setEnviando] = useState(false);
+  const [feito, setFeito] = useState(null);
+  useEffect(() => { if (!dia && dias.length) setDia(dias[0][0]); }, [dias, dia]);
+  const fmtDia = (k, op) => new Date(k + 'T12:00:00-03:00').toLocaleDateString(t.loc, { timeZone: tz, ...op });
+  const fmtHora = h => new Date(h).toLocaleTimeString(t.loc, { timeZone: tz, hour: '2-digit', minute: '2-digit' });
+  const doDia = (dias.find(d => d[0] === dia) || [null, []])[1];
+  async function marcar(e) {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(e.currentTarget));
+    if (!hora) return setMsg({ t: t.agEscolha, c: 'erro' });
+    if ((d.nome || '').trim().length < 2) return setMsg({ t: t.eNome, c: 'erro' });
+    if ((d.whatsapp || '').replace(/\D/g, '').length < 10) return setMsg({ t: t.eWpp, c: 'erro' });
+    setEnviando(true); setMsg({ t: '', c: '' });
+    try {
+      await agendar({ ...d, inicio: hora }, origemDaVisita());
+      evento('Lead', { interesse: d.interesse || '', agenda: 1 });
+      setFeito({ hora, nome: d.nome });
+    } catch (err) {
+      setMsg({ t: (err && err.message) || t.erroEnvio, c: 'erro' });
+      setHora(null); recarregar();
+    }
+    setEnviando(false);
+  }
+  if (feito) {
+    const ini = new Date(feito.hora), fim = new Date(ini.getTime() + (agenda.duracao || 30) * 6e4);
+    const g = x => x.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    const cal = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(t.agEvento) + '&dates=' + g(ini) + '/' + g(fim) + '&details=' + encodeURIComponent(t.agEventoTx + ' ' + wpp.split('?')[0]);
+    const quando = fmtDia(ini.toLocaleDateString('en-CA', { timeZone: tz }), { weekday: 'long', day: 'numeric', month: 'long' }) + ' · ' + fmtHora(feito.hora);
+    return (
+      <div className="form agenda-ok" role="status">
+        <span className="agenda-ok-ic"><IcAgenda /></span>
+        <h3>{t.agOk(quando)}</h3>
+        <a className="pilula clara larga" href={cal} target="_blank" rel="noopener"><span>{t.agCal}</span><i><Seta /></i></a>
+        <button className="agenda-link" onClick={() => { setFeito(null); setHora(null); recarregar(); }}>{t.agOutro}</button>
+      </div>
+    );
+  }
+  return (
+    <form className="form agenda" onSubmit={marcar} noValidate>
+      <h3>{t.agTit}</h3>
+      <p className="form-dica">{t.agDica(agenda.duracao || 30)}</p>
+      {!dias.length ? <p className="form-msg">{t.agSem} <a href={wpp} target="_blank" rel="noopener">{t.falarDireto}</a>.</p> : <>
+        <span className="agenda-rot">{t.agDia}</span>
+        <div className="agenda-dias" role="listbox" aria-label={t.agDia}>
+          {dias.map(([k]) => (
+            <button type="button" key={k} role="option" aria-selected={dia === k} className={dia === k ? 'on' : ''} onClick={() => { setDia(k); setHora(null); }}>
+              <small>{fmtDia(k, { weekday: 'short' }).replace('.', '')}</small><b>{fmtDia(k, { day: '2-digit' })}</b><small>{fmtDia(k, { month: 'short' }).replace('.', '')}</small>
+            </button>))}
+        </div>
+        <span className="agenda-rot">{t.agHora}</span>
+        <div className="agenda-horas" role="listbox" aria-label={t.agHora}>
+          {doDia.map(h => <button type="button" key={h} role="option" aria-selected={hora === h} className={hora === h ? 'on' : ''} onClick={() => setHora(h)}>{fmtHora(h)}</button>)}
+        </div>
+        <div className="form-2">
+          <label>{t.fNome}<input name="nome" autoComplete="name" required maxLength={120} /></label>
+          <label>{t.fWpp}<input name="whatsapp" type="tel" inputMode="tel" autoComplete="tel" required maxLength={30} placeholder="(77) 99999-9999" value={tel} onChange={e => setTel(mascara(e.target.value))} /></label>
+        </div>
+        <label>{t.fPrecisa}
+          <select name="interesse" defaultValue="">
+            <option value="">{t.fEscolha}</option>
+            {interesses.map(o => <option key={o}>{o}</option>)}
+          </select>
+        </label>
+        <button className="pilula clara larga" type="submit" disabled={enviando}><span>{enviando ? t.agMarcando : t.agMarcar}{hora && !enviando ? ' · ' + fmtHora(hora) : ''}</span><i><Seta /></i></button>
+      </>}
+      <p className={'form-msg ' + msg.c} role="status">{msg.t}</p>
+    </form>
+  );
+}
+
+const IcAgenda = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM12 13v3l2 1"/></svg>;
 
 /* cantos de visor, REC piscando e o tempo correndo na abertura */
 const IcEntrar = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M9 16l4-4-4-4M13 12H3"/></svg>;
@@ -642,7 +742,7 @@ const IcBalao = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="cu
 const IcSobe = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>;
 
 /* trabalhos: filtros por categoria + trilho de Reels (capa, cliente, play) */
-function Obras({ videos, abrir, insta, insta_ }) {
+function Obras({ videos, abrir, insta, insta_, t }) {
   const [cat, setCat] = useState('');
   const trilho = useRef(null);
   const cats = [...new Set(videos.map(v => v.categoria).filter(Boolean))];
@@ -663,20 +763,20 @@ function Obras({ videos, abrir, insta, insta_ }) {
     <div className="obras">
       <div className="lim obras-cab">
         <div>
-          <p className="rotulo aparece">Projetos selecionados</p>
-          <h2 className="aparece">Vídeos que já estão <em>fazendo resultado</em>.</h2>
+          <p className="rotulo aparece">{t.projetos}</p>
+          <h2 className="aparece">{t.projetosTit}</h2>
         </div>
         <div className="obras-nav">
-          <button onClick={() => andar(-1)} aria-label="Voltar"><Seta /></button>
-          <button onClick={() => andar(1)} aria-label="Avançar"><Seta /></button>
+          <button onClick={() => andar(-1)} aria-label={t.voltar}><Seta /></button>
+          <button onClick={() => andar(1)} aria-label={t.avancar}><Seta /></button>
         </div>
       </div>
       {cats.length > 1 && <div className="lim obras-filtro aparece">{[''].concat(cats).map(c =>
-        <button key={c || 'todos'} className={cat === c ? 'on' : ''} onClick={() => setCat(c)}>{c || 'Todos'}</button>)}</div>}
+        <button key={c || 'todos'} className={cat === c ? 'on' : ''} onClick={() => setCat(c)}>{c || t.todos}</button>)}</div>}
       <div className="obras-trilho" ref={trilho}>
         {lista.map((v, k) => (
           <article className="obra aparece" key={v.id} style={{ '--k': k }}>
-            <button className="obra-cx inclina" onClick={() => abrir(v.video_url || v.link)} aria-label={'Ver vídeo: ' + (v.titulo || v.cliente_nome || '')}>
+            <button className="obra-cx inclina" onClick={() => abrir(v.video_url || v.link)} aria-label={t.verVideo + (v.titulo || v.cliente_nome || '')}>
               {v.capa_url ? <img src={v.capa_url} alt="" loading="lazy" draggable="false" />
                 : tipoLink(v.video_url) === 'arquivo' ? <video src={v.video_url + '#t=0.5'} muted playsInline preload="metadata" />
                 : <span className="obra-arte"><img src="/marca/symbol-white.png" alt="" /></span>}
@@ -687,9 +787,9 @@ function Obras({ videos, abrir, insta, insta_ }) {
                 <b>{v.avatar_url && <img className="obra-av" src={v.avatar_url} alt="" />}{v.cliente_nome || v.titulo}</b>
                 {v.titulo && v.cliente_nome && <small>{v.titulo}</small>}
                 {(v.visualizacoes || v.curtidas || v.comentarios) && <span className="obra-num">
-                  {v.visualizacoes && <span title="Visualizações"><IcOlho />{v.visualizacoes}</span>}
-                  {v.curtidas && <span title="Curtidas"><IcCoracao />{v.curtidas}</span>}
-                  {v.comentarios && <span title="Comentários"><IcBalao />{v.comentarios}</span>}
+                  {v.visualizacoes && <span title={t.visualizacoes}><IcOlho />{v.visualizacoes}</span>}
+                  {v.curtidas && <span title={t.curtidas}><IcCoracao />{v.curtidas}</span>}
+                  {v.comentarios && <span title={t.comentarios}><IcBalao />{v.comentarios}</span>}
                 </span>}
                 {v.resultado && <span className="obra-res"><IcSobe />{v.resultado}</span>}
                 {v.cliente_arroba && <small className="obra-arroba">@{String(v.cliente_arroba).replace(/^@/, '')}</small>}
@@ -697,7 +797,7 @@ function Obras({ videos, abrir, insta, insta_ }) {
             </button>
           </article>
         ))}
-        <a className="obra obra-mais" href={insta} target="_blank" rel="noopener" onClick={insta_}><span>Ver mais no Instagram<Seta /></span></a>
+        <a className="obra obra-mais" href={insta} target="_blank" rel="noopener" onClick={insta_}><span>{t.verMaisInsta}<Seta /></span></a>
       </div>
     </div>
   );
@@ -798,7 +898,7 @@ function Reel({ m, ativo }) {
 }
 
 /* balão do WhatsApp: aparece uma vez por visita, depois de alguns segundos */
-function BalaoWpp({ wpp, cfg }) {
+function BalaoWpp({ wpp, cfg, t }) {
   const [ver, setVer] = useState(false);
   useEffect(() => {
     try { if (sessionStorage.getItem('b7_balao')) return; } catch (e) {}
@@ -810,10 +910,10 @@ function BalaoWpp({ wpp, cfg }) {
   const nome = String(cfg.whatsapp_nome || 'Gabriel').split(' ')[0];
   return (
     <div className="balao-wpp" role="status">
-      <button className="balao-x" onClick={() => setVer(false)} aria-label="Fechar">×</button>
+      <button className="balao-x" onClick={() => setVer(false)} aria-label={t.fechar}>×</button>
       <a href={wpp} target="_blank" rel="noopener" onClick={() => { evento('Contact', { canal: 'whatsapp', origem: 'balao' }); setVer(false); }}>
         <span className="balao-av">{nome.charAt(0)}<i /></span>
-        <span><b>{nome} · Branding7</b><small>Oi! Quer saber quanto fica o seu vídeo? Me chama aqui que eu te respondo agora. 👋</small></span>
+        <span><b>{nome} · Branding7</b><small>{t.balao}</small></span>
       </a>
     </div>
   );
@@ -854,7 +954,7 @@ function Visor() {
 }
 
 /* celular: topo de vidro com menu em tela cheia + barra de ações embaixo */
-function MenuCelular({ wpp, insta, nav }) {
+function MenuCelular({ wpp, insta, nav, t }) {
   const [aberto, setAberto] = useState(false);
   const [rolou, setRolou] = useState(false);
   useEffect(() => {
@@ -868,17 +968,17 @@ function MenuCelular({ wpp, insta, nav }) {
     <>
       <header className={'cel-topo' + (rolou || aberto ? ' visivel' : '')}>
         <a href="#inicio" onClick={ir}><img src="/marca/logo-white-300.png" alt="Branding7" width="102" height="40" /></a>
-        <button className={'cel-menu-bt' + (aberto ? ' x' : '')} aria-label={aberto ? 'Fechar menu' : 'Abrir menu'} aria-expanded={aberto} onClick={() => setAberto(a => !a)}><i /><i /></button>
+        <button className={'cel-menu-bt' + (aberto ? ' x' : '')} aria-label={aberto ? t.menuFechar : t.menuAbrir} aria-expanded={aberto} onClick={() => setAberto(a => !a)}><i /><i /></button>
       </header>
       <nav className={'cel-menu' + (aberto ? ' aberto' : '')} aria-hidden={!aberto}>
         {nav.map(([id, rot], k) =>
           <a key={id} href={'#' + id} onClick={ir} style={{ '--k': k }}><small>{String(k + 1).padStart(2, '0')}</small>{rot}</a>)}
-        <div className="cel-menu-pe"><a href={insta} target="_blank" rel="noopener">Instagram</a><a href="https://sistema.branding7.com.br/">Área do cliente</a></div>
+        <div className="cel-menu-pe"><a href={t.sobrePag}>{t.sobreNos}</a><a href={insta} target="_blank" rel="noopener">Instagram</a><a href="https://sistema.branding7.com.br/">{t.areaCliente}</a><a href={t.outra} hrefLang={t.lang === 'en' ? 'pt-BR' : 'en'}>{t.outraRot}</a></div>
       </nav>
       <div className="cel-acoes">
         <a className="cel-zap" href={wpp} target="_blank" rel="noopener" onClick={() => evento('Contact', { canal: 'whatsapp' })}><Zap />WhatsApp</a>
-        <a className="cel-orc" href="#contato">Orçamento<Seta /></a>
-        <a className="cel-entrar" href="https://sistema.branding7.com.br/" aria-label="Entrar no sistema"><IcEntrar /><span>Entrar</span></a>
+        <a className="cel-orc" href="#contato">{t.orcCurto}<Seta /></a>
+        <a className="cel-entrar" href="https://sistema.branding7.com.br/" aria-label={t.entrarAria}><IcEntrar /><span>{t.entrar}</span></a>
       </div>
     </>
   );
