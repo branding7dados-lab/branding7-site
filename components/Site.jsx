@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Cinema from './Cinema';
+import { gpuBoa } from '@/lib/gpu';
 import { carregar, CFG_PADRAO, SERVICOS_PADRAO, linkWpp, tipoLink, embed, enviarLead, origemDaVisita, evento, registrar } from '@/lib/dados';
 
 /* a câmera 3D chega só no navegador e só quando a página já abriu */
@@ -700,13 +701,7 @@ function MuroReels({ itens, heroi }) {
   /* 3D (perspectiva) só onde o vídeo é desenhado pela placa de vídeo; em
      computador sem aceleração ele fica plano (sem esticar) e leve */
   useEffect(() => {
-    try {
-      const gl = document.createElement('canvas').getContext('webgl');
-      const ext = gl && gl.getExtension('WEBGL_debug_renderer_info');
-      const r = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : '';
-      const fraco = !gl || /swiftshader|llvmpipe|software|basic render/i.test(r) || (navigator.hardwareConcurrency || 8) <= 2;
-      setM3d(!fraco && !matchMedia('(prefers-reduced-motion: reduce)').matches);
-    } catch (e) { setM3d(false); }
+    setM3d(gpuBoa() && !matchMedia('(prefers-reduced-motion: reduce)').matches);
   }, []);
   useEffect(() => { const f = () => setCols(innerWidth < 640 ? 4 : innerWidth < 1100 ? 5 : 6); f(); addEventListener('resize', f); return () => removeEventListener('resize', f); }, []);
   const capas = itens.filter(i => (i.tipo === 'video' || i.tipo === 'depoimento') && (i.capa_url || tipoLink(i.video_url) === 'arquivo'))

@@ -5,7 +5,7 @@
    ou, sem vídeo, um "story" com o logo do cliente; por cima, a interface
    de Reels (barrinhas, @, curtidas). Gira com a rolagem da seção, segue o
    mouse, dá para arrastar e tocar para passar. Só desenha quando aparece. */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
@@ -69,7 +69,38 @@ function montarCelular(texTela) {
   return { cel };
 }
 
-export default function Celular3D({ progresso, midias = [] }) {
+/* reserva sem 3D: um celular desenhado em CSS passando os mesmos vídeos.
+   Entra quando o aparelho não consegue (ou perde) a tela 3D. */
+function CelularPlano({ midias }) {
+  const [i, setI] = useState(0);
+  const lista = midias.length ? midias : [];
+  const m = lista.length ? lista[i % lista.length] : null;
+  useEffect(() => {
+    if (!m || m.video) return;
+    const t = setTimeout(() => setI(x => x + 1), 5200); return () => clearTimeout(t);
+  }, [i, m && (m.video || m.capa)]);
+  if (!m) return null;
+  return (
+    <div className="cel-plano" role="img" aria-label="Celular mostrando vídeos de clientes da Branding7">
+      <div className="cel-plano-tela" key={i}>
+        {m.video ? <video src={m.video} muted autoPlay playsInline onEnded={() => setI(x => x + 1)} />
+          : <img src={m.capa || m.logo} alt="" />}
+        <span className="cel-plano-ilha" />
+        <span className="cel-plano-barras">{lista.slice(0, 8).map((_, k) => <i key={k} className={k < i % lista.length ? 'ok' : k === i % lista.length ? 'agora' : ''} />)}</span>
+        <span className="cel-plano-quem">{m.avatar && <img src={m.avatar} alt="" />}<b>{m.arroba ? '@' + String(m.arroba).replace(/^@/, '') : m.nome}</b></span>
+        <span className="cel-plano-leg">{m.titulo || m.nome}</span>
+      </div>
+    </div>
+  );
+}
+
+export default function Celular3D(props) {
+  const [plano, setPlano] = useState(false);
+  if (plano) return <CelularPlano midias={props.midias || []} />;
+  return <Celular3DReal {...props} falhou={() => setPlano(true)} />;
+}
+
+function Celular3DReal({ progresso, midias = [], falhou }) {
   const caixa = useRef(null);
   const listaRef = useRef(midias);
   listaRef.current = midias;
@@ -78,7 +109,10 @@ export default function Celular3D({ progresso, midias = [] }) {
     const el = caixa.current; if (!el) return;
     let render;
     try { render = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' }); }
-    catch (e) { el.classList.add('sem-3d'); return; }
+    catch (e) { falhou(); return; }
+    if (!render.getContext()) { falhou(); return; }
+    /* o celular derrubou a tela 3D (falta de memória): troca pela reserva */
+    render.domElement.addEventListener('webglcontextlost', e => { e.preventDefault(); falhou(); }, { once: true });
     const calmo = matchMedia('(prefers-reduced-motion: reduce)').matches;
     render.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
     render.outputColorSpace = THREE.SRGBColorSpace; render.toneMapping = THREE.ACESFilmicToneMapping; render.toneMappingExposure = 1.1;

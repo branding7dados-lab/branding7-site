@@ -5,6 +5,7 @@
    aba escondida; quem pediu menos movimento fica com o site normal. */
 import { useEffect, useRef } from 'react';
 import Lenis from 'lenis';
+import { gpuBoa } from '@/lib/gpu';
 
 const SINAIS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&*+';
 
@@ -17,12 +18,7 @@ export default function Cinema() {
     const raiz = document.documentElement;
 
     /* placa de vídeo boa? liga os extras 3D */
-    try {
-      const gl = document.createElement('canvas').getContext('webgl');
-      const ext = gl && gl.getExtension('WEBGL_debug_renderer_info');
-      const r = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : '';
-      if (gl && !/swiftshader|llvmpipe|software|basic render/i.test(r) && !calmo) raiz.classList.add('gpu');
-    } catch (e) {}
+    if (gpuBoa() && !calmo) raiz.classList.add('gpu');
 
     /* ---------- rolagem macia (só roda e mouse; o toque segue nativo) ---------- */
     let lenis = null, raf = 0;
