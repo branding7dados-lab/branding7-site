@@ -1172,3 +1172,5 @@ html,body{overflow-x:clip;max-width:100%;}
 .sobre-chamada:hover > i{transform:rotate(45deg);}
 @media (max-width:640px){ .sobre-chamada{gap:12px;padding:12px;} .sc-tx b{font-size:15px;} .sc-rostos > span{width:38px;height:38px;} }
 .pilula-nav a{white-space:nowrap;}
+.sb-cargos{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.sb-cargos small{padding:4px 10px;border-radius:99px;border:1px solid var(--borda);background:rgba(255,255,255,.04);color:var(--tx-2) !important;font-size:12.5px !important;}

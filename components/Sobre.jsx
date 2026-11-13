@@ -31,6 +31,8 @@ const S = {
   }
 };
 
+const CARGO_EN = { Coordenador: 'Coordinator', Designer: 'Designer', Videomaker: 'Videomaker', Administrador: 'Manager', 'Gestor de Marketing': 'Marketing Manager', 'Estrategista de Conteúdo': 'Content Strategist', 'Estratégista de Conteúdo': 'Content Strategist' };
+
 export default function Sobre({ lang = 'pt' }) {
   const t = T[lang], s = S[lang], en = lang === 'en';
   const [d, setD] = useState({ cfg: CFG_PADRAO, equipe: [], bastidores: [], numeros: null });
@@ -89,7 +91,7 @@ export default function Sobre({ lang = 'pt' }) {
               {d.equipe.map(p => (
                 <figure key={p.id} className="sb-pessoa aparece">
                   <span className="sb-foto">{p.capa_url ? <img src={p.capa_url} alt={p.titulo || ''} loading="lazy" /> : <i>{(p.titulo || '?').charAt(0)}</i>}</span>
-                  <figcaption><b>{p.titulo}</b>{p.texto && <small>{p.texto}</small>}
+                  <figcaption><b>{p.titulo}</b>{p.texto && <span className="sb-cargos">{String(p.texto).split(/\s*·\s*/).filter(Boolean).map(c => <small key={c}>{en ? (CARGO_EN[c] || c) : c}</small>)}</span>}
                     {p.cliente_arroba && <a href={'https://www.instagram.com/' + String(p.cliente_arroba).replace(/^@/, '') + '/'} target="_blank" rel="noopener">@{String(p.cliente_arroba).replace(/^@/, '')}</a>}</figcaption>
                 </figure>
               ))}
