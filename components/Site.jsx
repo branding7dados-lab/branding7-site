@@ -8,7 +8,7 @@ import Cinema from './Cinema';
 import { gpuBoa } from '@/lib/gpu';
 import { capaDe, carregar, CFG_PADRAO, SERVICOS_PADRAO, linkWpp, tipoLink, embed, enviarLead, origemDaVisita, evento, registrar, horariosLivres, agendar } from '@/lib/dados';
 import { T } from '@/lib/textos';
-import { Cookies, rastreadores } from './Casca';
+import { Cookies, rastreadores, Idiomas } from './Casca';
 
 /* a câmera 3D chega só no navegador e só quando a página já abriu */
 const Celular3D = dynamic(() => import('./Celular3D'), { ssr: false });
@@ -278,7 +278,7 @@ export default function Site({ lang = 'pt' }) {
         <header className="heroi-topo">
           <img src="/marca/logo-white-300.png" alt="Branding7" width="132" height="52" />
           <span className="topo-dir">
-            <a className="topo-lang" href={t.outra} hrefLang={en ? 'pt-BR' : 'en'} aria-label={t.outraRot}>{t.outraNome}</a>
+            <Idiomas t={t} className="topo-idiomas" />
             <a className="topo-link" href={insta} target="_blank" rel="noopener" onClick={insta_}>@{String(cfg.instagram || 'b7.agencia').replace(/^@/, '')}</a>
           </span>
         </header>
@@ -459,7 +459,7 @@ export default function Site({ lang = 'pt' }) {
             <a href={wpp} target="_blank" rel="noopener">WhatsApp</a>
             <a href="https://sistema.branding7.com.br/">{t.areaCliente}</a>
             <a href={t.privPag}>{t.privacidade}</a>
-            <a href={t.outra} hrefLang={en ? 'pt-BR' : 'en'}>{t.outraRot}</a>
+            <Idiomas t={t} />
           </nav>
           <small>© {new Date().getFullYear()} Branding7 · Núcleo7</small>
         </div>
@@ -980,7 +980,7 @@ function MenuCelular({ wpp, insta, nav, t }) {
       <nav className={'cel-menu' + (aberto ? ' aberto' : '')} aria-hidden={!aberto}>
         {nav.map(([id, rot], k) =>
           <a key={id} href={'#' + id} onClick={ir} style={{ '--k': k }}><small>{String(k + 1).padStart(2, '0')}</small>{rot}</a>)}
-        <div className="cel-menu-pe"><a href={t.sobrePag}>{t.sobreNos}</a><a href={insta} target="_blank" rel="noopener">Instagram</a><a href="https://sistema.branding7.com.br/">{t.areaCliente}</a><a href={t.outra} hrefLang={t.lang === 'en' ? 'pt-BR' : 'en'}>{t.outraRot}</a></div>
+        <div className="cel-menu-pe"><a href={t.sobrePag}>{t.sobreNos}</a><a href={insta} target="_blank" rel="noopener">Instagram</a><a href="https://sistema.branding7.com.br/">{t.areaCliente}</a><Idiomas t={t} /></div>
       </nav>
       <div className="cel-acoes">
         <a className="cel-zap" href={wpp} target="_blank" rel="noopener" onClick={() => evento('Contact', { canal: 'whatsapp' })}><Zap />WhatsApp</a>

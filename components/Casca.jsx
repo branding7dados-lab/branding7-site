@@ -71,7 +71,7 @@ export function Casca({ t, cfg = CFG_PADRAO, children, outra }) {
         <nav aria-label={t.navAria}>
           <a href={t.raiz + '#trabalhos'}>{t.nav.trabalhos}</a>
           <a href={t.sobrePag}>{t.nav.sobre}</a>
-          <a href={outra || t.outra} hrefLang={t.lang === 'en' ? 'pt-BR' : 'en'} aria-label={t.outraRot}>{t.outraNome}</a>
+          <Idiomas t={t} outra={outra} />
           <a className="casca-cta" href={t.raiz + '#contato'}>{t.orcCurto}<i><Seta /></i></a>
         </nav>
       </header>
@@ -92,5 +92,30 @@ export function Casca({ t, cfg = CFG_PADRAO, children, outra }) {
       <a className="wpp-flutua casca-wpp" href={wpp} target="_blank" rel="noopener" aria-label={t.wppAria} onClick={zap}><Zap /></a>
       <Cookies t={t} cfg={cfg} />
     </div>
+  );
+}
+
+/* bandeiras para trocar o idioma (SVG: o emoji de bandeira não aparece no Windows) */
+export const BandeiraBR = () => (
+  <svg viewBox="0 0 28 20" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="28" height="20" fill="#009b3a" /><path d="M14 2.2 25.6 10 14 17.8 2.4 10z" fill="#fedf00" />
+    <circle cx="14" cy="10" r="4.6" fill="#002776" /><path d="M9.6 9.1c2.9-.5 6.1.1 8.7 1.6l-.3.9c-2.5-1.4-5.5-2-8.3-1.5z" fill="#fff" /></svg>
+);
+export const BandeiraUS = () => (
+  <svg viewBox="0 0 28 20" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="28" height="20" fill="#fff" />
+    {[0, 2, 4, 6, 8, 10, 12].map(k => <rect key={k} y={k * 20 / 13} width="28" height={20 / 13} fill="#b22234" />)}
+    <rect width="12.4" height={20 * 7 / 13} fill="#3c3b6e" />
+    {[[2, 2], [5, 2], [8, 2], [11, 2], [3.5, 4.2], [6.5, 4.2], [9.5, 4.2], [2, 6.4], [5, 6.4], [8, 6.4], [11, 6.4], [3.5, 8.6], [6.5, 8.6], [9.5, 8.6]].map(([x, y], k) => <circle key={k} cx={x - .5} cy={y + .2} r=".55" fill="#fff" />)}</svg>
+);
+/* seletor: as duas bandeiras, a do idioma atual acesa; a outra leva à outra versão */
+export function Idiomas({ t, outra, className = '' }) {
+  const en = t.lang === 'en';
+  const alvo = outra || t.outra;
+  return (
+    <span className={'idiomas ' + className} role="group" aria-label={en ? 'Language' : 'Idioma'}>
+      <a href={en ? alvo : '#'} hrefLang="pt-BR" lang="pt-BR" className={en ? '' : 'on'} aria-current={en ? undefined : 'true'} title="Português" aria-label="Português"
+        onClick={e => { if (!en) e.preventDefault(); }}><BandeiraBR /></a>
+      <a href={en ? '#' : alvo} hrefLang="en" lang="en" className={en ? 'on' : ''} aria-current={en ? 'true' : undefined} title="English" aria-label="English"
+        onClick={e => { if (en) e.preventDefault(); }}><BandeiraUS /></a>
+    </span>
   );
 }
