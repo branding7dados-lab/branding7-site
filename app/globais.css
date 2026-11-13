@@ -1089,3 +1089,59 @@ html,body{overflow-x:clip;max-width:100%;}
   .contato-abas button{flex:1;justify-content:center;padding:0 10px;font-size:13px;white-space:nowrap;}
   .contato-abas button svg{display:none;}
 }
+
+/* ---------- depoimentos (nov/2026): cartões em pé no formato dos Reels ---------- */
+.depo-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px;margin-top:50px;align-items:stretch;}
+.depo2{position:relative;margin:0;min-height:0;aspect-ratio:9/16;border-radius:26px;overflow:hidden;isolation:isolate;background:var(--fundo-2);border:1px solid var(--borda);cursor:pointer;
+  transition:transform .5s cubic-bezier(.16,1,.3,1),box-shadow .5s;}
+.depo2:hover{transform:translateY(-6px);box-shadow:0 30px 60px -30px rgba(226,64,156,.55);}
+.depo2-midia{position:absolute;inset:0;z-index:-1;border:0;padding:0;background:var(--grad);cursor:pointer;}
+.depo2-midia img,.depo2-midia video{width:100%;height:100%;object-fit:cover;transition:transform 1s cubic-bezier(.16,1,.3,1);}
+.depo2:hover .depo2-midia img,.depo2:hover .depo2-midia video{transform:scale(1.06);}
+.depo2-midia::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.6) 0%,transparent 22%,transparent 42%,rgba(6,3,15,.92) 78%);}
+.depo2-play{position:absolute;z-index:1;top:50%;left:50%;width:64px;height:64px;margin:-52px 0 0 -32px;border-radius:50%;display:grid;place-items:center;color:#fff;
+  background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);transition:transform .4s cubic-bezier(.3,1.5,.5,1),background .3s;}
+.depo2-play::before{content:"";position:absolute;inset:-1px;border-radius:50%;border:1px solid rgba(255,255,255,.5);animation:depoOnda 2.4s ease-out infinite;}
+@keyframes depoOnda{from{transform:scale(1);opacity:.8;}to{transform:scale(1.7);opacity:0;}}
+.depo2-play svg{width:22px;height:22px;margin-left:3px;}
+.depo2:hover .depo2-play{transform:scale(1.12);background:var(--grad);border-color:transparent;}
+.depo2-quem{position:absolute;z-index:1;top:16px;left:16px;right:16px;display:flex;align-items:center;gap:10px;color:#fff;pointer-events:none;}
+.depo2-quem b{display:block;font:600 15px/1.2 var(--f-sora),sans-serif;}
+.depo2-quem small{display:block;font-size:12.5px;color:rgba(255,255,255,.75);}
+.depo2-av{width:38px;height:38px;flex:none;border-radius:50%;overflow:hidden;display:grid;place-items:center;font-weight:700;background:var(--grad);box-shadow:0 0 0 2px #fff;}
+.depo2-av img{width:100%;height:100%;object-fit:cover;background:#fff;}
+.depo2-tx{position:absolute;z-index:1;left:0;right:0;bottom:0;padding:20px 20px 22px;display:grid;gap:14px;color:#fff;pointer-events:none;}
+.depo2-tx blockquote{margin:0;font:500 17px/1.42 var(--f-sora),sans-serif;letter-spacing:-.01em;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;}
+.depo2-ver{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.8);}
+.depo2-ver svg{width:12px;height:12px;}
+/* só texto */
+.depo2-so-tx{cursor:default;display:flex;flex-direction:column;justify-content:flex-end;padding:22px;background:radial-gradient(90% 60% at 0% 0%,rgba(91,43,198,.45),transparent 70%),radial-gradient(80% 50% at 100% 100%,rgba(226,64,156,.3),transparent 70%),var(--fundo-2);}
+.depo2-so-tx:hover{transform:none;box-shadow:none;}
+.depo2-aspas{font:800 120px/.7 var(--f-sora),sans-serif;background:var(--grad-tx);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.depo2-so-tx blockquote{margin:14px 0 0;font:500 20px/1.42 var(--f-sora),sans-serif;letter-spacing:-.015em;}
+/* "a próxima história": mesmo tamanho dos cartões */
+.depo-cta.depo2{aspect-ratio:9/16;min-height:0;cursor:default;border-radius:26px;background:radial-gradient(120% 70% at 0% 100%,rgba(226,64,156,.35),transparent 60%),radial-gradient(100% 60% at 100% 0%,rgba(91,43,198,.45),transparent 60%),var(--fundo-2);}
+.depo-cta.depo2:hover{transform:none;}
+@media (max-width:640px){
+  .depo-grade{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:12px;margin:40px -20px 0;padding:0 20px 10px;scrollbar-width:none;}
+  .depo-grade::-webkit-scrollbar{display:none;}
+  .depo2{flex:0 0 78%;scroll-snap-align:center;}
+}
+@media (prefers-reduced-motion:reduce){ .depo2-play::before{animation:none;} }
+
+/* celular reserva com movimento (nov/2026): sem WebGL, só transformações em
+   CSS 3D, que a placa de vídeo compõe sem redesenhar. Gira com a rolagem
+   (--p da seção), flutua, tem espessura e um reflexo que passa no vidro. */
+.cel-plano{perspective:1700px;animation:celFlutua 7s ease-in-out infinite alternate;}
+@keyframes celFlutua{from{transform:translateY(-10px);}to{transform:translateY(12px);}}
+.cel-plano-corpo{position:relative;height:min(92%,640px);aspect-ratio:9/19.5;transform-style:preserve-3d;will-change:transform;
+  transform:rotateY(calc((var(--p,.5) - .6) * -80deg)) rotateX(calc((var(--p,.5) - .45) * 14deg)) rotateZ(calc(-9deg + var(--p,.5) * 12deg));}
+.cel-plano-corpo .cel-plano-tela{position:absolute;inset:0;height:auto;transform:translateZ(1px);animation:none;}
+.cel-plano-costas{position:absolute;inset:0;border-radius:44px;background:linear-gradient(140deg,#4a3a78,#1a1232 55%,#2a1d4c);box-shadow:0 0 0 1px rgba(255,255,255,.08);}
+.cel-plano-costas.c1{transform:translateZ(-4px);} .cel-plano-costas.c2{transform:translateZ(-8px);}
+.cel-plano-costas.c3{transform:translateZ(-12px);box-shadow:0 50px 90px -30px rgba(0,0,0,.9),0 0 100px -20px rgba(226,64,156,.5);}
+.cel-plano-brilho{position:absolute;inset:0;z-index:3;overflow:hidden;pointer-events:none;border-radius:inherit;}
+.cel-plano-brilho::before{content:"";position:absolute;top:-10%;bottom:-10%;left:-70%;width:55%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.16) 45%,rgba(255,255,255,.04) 60%,transparent);
+  transform:translateX(calc(var(--p,.5) * 420%)) skewX(-18deg);}
+@media (prefers-reduced-motion:reduce){ .cel-plano{animation:none;} .cel-plano-corpo{transform:rotateZ(-4deg);} }

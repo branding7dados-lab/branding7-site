@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Cinema from './Cinema';
 import { gpuBoa } from '@/lib/gpu';
-import { carregar, CFG_PADRAO, SERVICOS_PADRAO, linkWpp, tipoLink, embed, enviarLead, origemDaVisita, evento, registrar, horariosLivres, agendar } from '@/lib/dados';
+import { capaDe, carregar, CFG_PADRAO, SERVICOS_PADRAO, linkWpp, tipoLink, embed, enviarLead, origemDaVisita, evento, registrar, horariosLivres, agendar } from '@/lib/dados';
 import { T } from '@/lib/textos';
 import { Cookies, rastreadores } from './Casca';
 
@@ -399,37 +399,9 @@ export default function Site({ lang = 'pt' }) {
           <div className="lim">
             <p className="rotulo aparece">{t.depoRot}</p>
             <h2 className="aparece">{t.depoTit}</h2>
-            <div className="depo-lista">
-              {depo.map(d => d.video_url && d.texto ? (
-                /* vídeo + a fala do cliente lado a lado */
-                <figure className="depo-combo aparece" key={d.id}>
-                  <button className="depo-video" onClick={() => abrir(d.video_url)} aria-label={t.depoVer(d.cliente_nome || '')}>
-                    <VideoFundo src={d.video_url} capa={d.capa_url} />
-                    <span className="depo-play"><Play /></span>
-                  </button>
-                  <div className="depo-combo-tx">
-                    <span className="depo-cta-aspas" aria-hidden="true">“</span>
-                    <blockquote>{d.texto}</blockquote>
-                    <figcaption>
-                      <span className="depo-av">{d.avatar_url ? <img src={d.avatar_url} alt="" /> : (d.cliente_nome || '?').charAt(0)}</span>
-                      <span><b>{d.cliente_nome}</b><small>{d.cliente_arroba ? '@' + String(d.cliente_arroba).replace(/^@/, '') : (d.titulo || t.depoCliente)}</small></span>
-                    </figcaption>
-                    <button className="depo-assistir" onClick={() => abrir(d.video_url)}><i><Play /></i>{t.depoAssistir}</button>
-                  </div>
-                </figure>
-              ) : d.video_url ? (
-                <button className="depo-video aparece" key={d.id} onClick={() => abrir(d.video_url)}>
-                  <VideoFundo src={d.video_url} capa={d.capa_url} />
-                  <span className="depo-play"><Play /></span>
-                  <span className="depo-quem"><b>{d.cliente_nome}</b>{d.cliente_arroba && <small>@{String(d.cliente_arroba).replace(/^@/, '')}</small>}</span>
-                </button>
-              ) : (
-                <figure className="depo-tx aparece inclina luz" key={d.id}>
-                  <blockquote>{d.texto}</blockquote>
-                  <figcaption><span className="depo-av">{(d.cliente_nome || '?').charAt(0)}</span><span><b>{d.cliente_nome}</b><small>{d.cliente_arroba ? '@' + String(d.cliente_arroba).replace(/^@/, '') : d.titulo}</small></span></figcaption>
-                </figure>
-              ))}
-              <div className="depo-cta aparece">
+            <div className="depo-grade">
+              {depo.map((d, k) => <DepoCartao key={d.id} d={d} k={k} t={t} abrir={abrir} />)}
+              <div className="depo-cta depo2 aparece">
                 <span className="depo-cta-aspas">“</span>
                 <b>{t.depoCtaB}</b>
                 <p>{t.depoCtaP}</p>
@@ -529,7 +501,7 @@ export default function Site({ lang = 'pt' }) {
                     <span><b>{v.cliente_nome || v.titulo}</b>{v.cliente_arroba && <small>@{String(v.cliente_arroba).replace(/^@/, '')}</small>}</span>
                   </div>
                   {v.titulo && v.cliente_nome && <p className="player-tit">{v.titulo}</p>}
-                  {v.tipo === 'depoimento' && v.texto && <blockquote className="player-depo">“{v.texto}”</blockquote>}
+                  {v.tipo === 'depoimento' && v.texto && <blockquote className="player-depo">“{semAspas(v.texto)}”</blockquote>}
                   {(v.visualizacoes || v.curtidas || v.comentarios) && <div className="obra-num">
                     {v.visualizacoes && <span><IcOlho />{v.visualizacoes}</span>}
                     {v.curtidas && <span><IcCoracao />{v.curtidas}</span>}
@@ -732,6 +704,41 @@ function Agenda({ agenda, recarregar, t, cfg, interesses, wpp }) {
   );
 }
 
+/* depoimento em pé, no formato dos Reels: capa com o vídeo, quem falou em
+   cima e a fala do cliente embaixo (a fala inteira aparece no player) */
+const semAspas = x => String(x || '').trim().replace(/^["“”'‘’]+|["“”'‘’]+$/g, '').trim();
+function DepoCartao({ d, k, t, abrir }) {
+  const capa = capaDe(d);
+  const arroba = d.cliente_arroba ? '@' + String(d.cliente_arroba).replace(/^@/, '') : '';
+  const quem = (
+    <span className="depo2-quem">
+      <span className="depo2-av">{d.avatar_url ? <img src={d.avatar_url} alt="" /> : (d.cliente_nome || '?').charAt(0)}</span>
+      <span><b>{d.cliente_nome}</b><small>{arroba || d.titulo || t.depoCliente}</small></span>
+    </span>
+  );
+  if (!d.video_url) return (
+    <figure className="depo2 depo2-so-tx aparece" style={{ '--k': k }}>
+      {quem}
+      <span className="depo2-aspas" aria-hidden="true">“</span>
+      <blockquote>{d.texto}</blockquote>
+    </figure>
+  );
+  return (
+    <figure className="depo2 aparece" style={{ '--k': k }} onClick={() => abrir(d.video_url)}>
+      <button className="depo2-midia" onClick={e => { e.stopPropagation(); abrir(d.video_url); }} aria-label={t.depoVer(d.cliente_nome || '')}>
+        {capa ? <img src={capa} alt="" loading="lazy" referrerPolicy="no-referrer" />
+          : tipoLink(d.video_url) === 'arquivo' ? <video src={d.video_url + '#t=0.5'} muted playsInline preload="metadata" /> : null}
+        <span className="depo2-play"><Play /></span>
+      </button>
+      {quem}
+      <figcaption className="depo2-tx">
+        {d.texto && <blockquote>“{semAspas(d.texto)}”</blockquote>}
+        <span className="depo2-ver"><Play />{t.depoAssistir}</span>
+      </figcaption>
+    </figure>
+  );
+}
+
 const IcAgenda = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM12 13v3l2 1"/></svg>;
 
 /* cantos de visor, REC piscando e o tempo correndo na abertura */
@@ -777,7 +784,7 @@ function Obras({ videos, abrir, insta, insta_, t }) {
         {lista.map((v, k) => (
           <article className="obra aparece" key={v.id} style={{ '--k': k }}>
             <button className="obra-cx inclina" onClick={() => abrir(v.video_url || v.link)} aria-label={t.verVideo + (v.titulo || v.cliente_nome || '')}>
-              {v.capa_url ? <img src={v.capa_url} alt="" loading="lazy" draggable="false" />
+              {capaDe(v) ? <img src={capaDe(v)} alt="" loading="lazy" draggable="false" referrerPolicy="no-referrer" />
                 : tipoLink(v.video_url) === 'arquivo' ? <video src={v.video_url + '#t=0.5'} muted playsInline preload="metadata" />
                 : <span className="obra-arte"><img src="/marca/symbol-white.png" alt="" /></span>}
               <span className="obra-sombra" />
@@ -814,8 +821,8 @@ function MuroReels({ itens, heroi }) {
     setM3d(gpuBoa() && !matchMedia('(prefers-reduced-motion: reduce)').matches);
   }, []);
   useEffect(() => { const f = () => setCols(innerWidth < 640 ? 4 : innerWidth < 1100 ? 5 : 6); f(); addEventListener('resize', f); return () => removeEventListener('resize', f); }, []);
-  const capas = itens.filter(i => (i.tipo === 'video' || i.tipo === 'depoimento') && (i.capa_url || tipoLink(i.video_url) === 'arquivo'))
-    .map(i => i.capa_url ? { capa: i.capa_url } : { video: i.video_url });
+  const capas = itens.filter(i => (i.tipo === 'video' || i.tipo === 'depoimento') && (capaDe(i) || tipoLink(i.video_url) === 'arquivo'))
+    .map(i => capaDe(i) ? { capa: capaDe(i) } : { video: i.video_url });
   if (heroi && !capas.some(c => c.video === heroi.video_url)) capas.unshift({ video: heroi.video_url });
   const logos = itens.filter(i => i.tipo === 'cliente' && i.capa_url).map(i => ({ logo: i.capa_url, nome: i.cliente_nome }));
   if (!capas.length && !logos.length) return null;

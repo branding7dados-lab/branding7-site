@@ -82,6 +82,8 @@ function CelularPlano({ midias }) {
   if (!m) return null;
   return (
     <div className="cel-plano" role="img" aria-label="Celular mostrando vídeos de clientes da Branding7">
+      <div className="cel-plano-corpo">
+      <span className="cel-plano-costas c1" /><span className="cel-plano-costas c2" /><span className="cel-plano-costas c3" />
       <div className="cel-plano-tela" key={i}>
         {m.video ? <video src={m.video} muted autoPlay playsInline onEnded={() => setI(x => x + 1)} />
           : <img src={m.capa || m.logo} alt="" />}
@@ -89,6 +91,8 @@ function CelularPlano({ midias }) {
         <span className="cel-plano-barras">{lista.slice(0, 8).map((_, k) => <i key={k} className={k < i % lista.length ? 'ok' : k === i % lista.length ? 'agora' : ''} />)}</span>
         <span className="cel-plano-quem">{m.avatar && <img src={m.avatar} alt="" />}<b>{m.arroba ? '@' + String(m.arroba).replace(/^@/, '') : m.nome}</b></span>
         <span className="cel-plano-leg">{m.titulo || m.nome}</span>
+        <span className="cel-plano-brilho" />
+      </div>
       </div>
     </div>
   );
