@@ -1255,3 +1255,47 @@ html,body{overflow-x:clip;max-width:100%;}
   .sb-nums{margin-top:36px;padding-top:24px;gap:16px 36px;}
 }
 @media (max-width:640px){ .casca-rodape .rodape-in > img{display:block;} }
+
+/* =====================================================================
+   nov/2026 (2) — celular como página de venda: um caminho só (o
+   formulário), player de vídeo arrumado, menu sem quebra
+   ===================================================================== */
+@media (max-width:640px){
+  /* barra de baixo: um botão só, "Quero meu orçamento" → formulário */
+  .cel-acoes{grid-template-columns:1fr auto !important;transition:transform .35s cubic-bezier(.2,.8,.2,1), opacity .3s;}
+  .cel-acoes.escondida{transform:translateY(140%);opacity:0;pointer-events:none;}
+  .cel-acoes a.cel-orc{justify-content:space-between;padding:0 6px 0 20px;font-size:15.5px;letter-spacing:-.01em;box-shadow:0 10px 26px -10px rgba(226,64,156,.7);}
+  .cel-acoes a.cel-orc i{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.2);}
+  .cel-acoes a.cel-orc svg{width:16px;height:16px;}
+  /* no formulário, o caminho é o formulário (ele já manda para o WhatsApp do comercial) */
+  .contato .wpp-cartao{display:none;}
+
+  /* menu: links do pé sem quebrar */
+  .cel-menu-pe{flex-wrap:wrap;gap:12px 20px;align-items:center;}
+  .cel-menu-pe a{white-space:nowrap;}
+
+  /* player de vídeo no celular: vídeo em cima, informações embaixo e
+     uma linha de navegação fixa [←] [Quero um vídeo assim] [→] */
+  .player{padding:calc(64px + env(safe-area-inset-top)) 16px 0 !important;align-items:stretch !important;justify-content:flex-start !important;}
+  .player-palco{flex-direction:column;align-items:center;gap:14px !important;overflow-y:auto;max-height:100%;width:100%;
+    padding:0 0 calc(96px + env(safe-area-inset-bottom)) !important;}
+  .player-palco .player-cx{height:min(60svh,560px) !important;width:auto !important;max-width:100%;aspect-ratio:9/16;border-radius:22px;flex:none;}
+  .player-info{width:100% !important;max-width:420px;gap:10px !important;}
+  .player-n{position:fixed;top:calc(30px + env(safe-area-inset-top));left:20px;}
+  .player-quem b{font-size:19px;}
+  .player-depo{font-size:15.5px;}
+  .player-info .pilula{position:fixed;z-index:3;left:76px;right:76px;bottom:calc(16px + env(safe-area-inset-bottom));margin:0 !important;height:48px;
+    justify-content:space-between;font-size:14px;padding:0 5px 0 16px;}
+  .player-info .pilula i{width:38px;height:38px;}
+  .player-seta{bottom:calc(16px + env(safe-area-inset-bottom)) !important;width:48px !important;height:48px !important;}
+  .player-x{top:calc(16px + env(safe-area-inset-top)) !important;width:42px;height:42px;font-size:24px;}
+  .player-info .pilula{z-index:6;box-shadow:0 10px 26px -10px rgba(226,64,156,.7);} .player-seta{z-index:6 !important;}
+
+  /* páginas internas: sem o botão flutuante de WhatsApp (o topo já tem "Orçamento") */
+  .casca .wpp-flutua.casca-wpp{display:none !important;}
+}
+/* vídeo do Instagram no player (celular): mostra só o vídeo, sem a moldura do Instagram */
+@media (max-width:640px){
+  .player-palco .player-cx.ig{position:relative;height:auto !important;width:min(100%,380px) !important;aspect-ratio:4/5;}
+  .player-cx.ig iframe{position:absolute;left:0;top:-55px;height:calc(100% + 320px) !important;}
+}

@@ -191,6 +191,20 @@ export default function Site({ lang = 'pt' }) {
       document.removeEventListener('pointermove', mover); document.removeEventListener('pointerout', sair); };
   }, [itens, cfg, numAuto]);
 
+  /* celular: os botões de venda levam ao formulário (ele já entrega o
+     pedido no WhatsApp do comercial), em vez de abrir o WhatsApp direto */
+  useEffect(() => {
+    const f = e => {
+      const a = e.target.closest && e.target.closest('a.pilula[href^="https://wa.me"]');
+      if (!a || !matchMedia('(max-width: 640px)').matches) return;
+      e.preventDefault(); e.stopPropagation();
+      setPlayer(null);
+      setTimeout(() => { const c = document.getElementById('contato'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
+    };
+    document.addEventListener('click', f, true);
+    return () => document.removeEventListener('click', f, true);
+  }, []);
+
   /* links internos (#contato, #trabalhos...) rolam até a seção sem deixar
      o "#..." na barra de endereço */
   useEffect(() => {
@@ -502,7 +516,7 @@ export default function Site({ lang = 'pt' }) {
             <button className="player-x" onClick={() => setPlayer(null)} aria-label={t.fechar}>×</button>
             {v && tocaveis.length > 1 && <button className="player-seta ant" onClick={() => passar(-1)} aria-label={t.videoAnt}><Seta /></button>}
             <div className="player-palco" key={url}>
-              <div className="player-cx">
+              <div className={'player-cx' + (tipoLink(url) === 'instagram' ? ' ig' : '')}>
                 {tipoLink(url) === 'arquivo' ? <video src={url} controls autoPlay playsInline /> : <iframe src={embed(url)} allow="autoplay; encrypted-media; fullscreen" allowFullScreen title={t.video} />}
               </div>
               {v && (
@@ -982,6 +996,13 @@ function MenuCelular({ wpp, insta, nav, t }) {
     return () => removeEventListener('scroll', f);
   }, []);
   useEffect(() => { document.documentElement.classList.toggle('menu-aberto', aberto); }, [aberto]);
+  /* a barra de baixo some quando o formulário já está na tela (não cobre o botão de enviar) */
+  const [noForm, setNoForm] = useState(false);
+  useEffect(() => {
+    const el = document.getElementById('contato'); if (!el) return;
+    const io = new IntersectionObserver(([e]) => setNoForm(e.isIntersecting), { rootMargin: '0px 0px -35% 0px' });
+    io.observe(el); return () => io.disconnect();
+  }, []);
   const ir = () => setAberto(false);
   return (
     <>
@@ -994,9 +1015,8 @@ function MenuCelular({ wpp, insta, nav, t }) {
           <a key={id} href={'#' + id} onClick={ir} style={{ '--k': k }}><small>{String(k + 1).padStart(2, '0')}</small>{rot}</a>)}
         <div className="cel-menu-pe"><a href={t.sobrePag}>{t.sobreNos}</a><a href={insta} target="_blank" rel="noopener">Instagram</a><a href="https://sistema.branding7.com.br/">{t.areaCliente}</a><Idiomas t={t} /></div>
       </nav>
-      <div className="cel-acoes">
-        <a className="cel-zap" href={wpp} target="_blank" rel="noopener" onClick={() => evento('Contact', { canal: 'whatsapp' })}><Zap />WhatsApp</a>
-        <a className="cel-orc" href="#contato">{t.orcCurto}<Seta /></a>
+      <div className={'cel-acoes' + (noForm ? ' escondida' : '')}>
+        <a className="cel-orc" href="#contato"><span>{t.depoCtaBt}</span><i><Seta /></i></a>
         <a className="cel-entrar" href="https://sistema.branding7.com.br/" aria-label={t.entrarAria}><IcEntrar /><span>{t.entrar}</span></a>
       </div>
     </>
