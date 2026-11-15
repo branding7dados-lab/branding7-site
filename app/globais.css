@@ -1207,3 +1207,51 @@ html,body{overflow-x:clip;max-width:100%;}
   .rodape nav .idiomas{justify-self:start;}
 }
 .pp-total{display:none;}
+
+/* =====================================================================
+   nov/2026 — revisão de layout do celular (UI/UX)
+   ===================================================================== */
+@media (max-width:640px){
+  /* ritmo vertical: seções mais próximas, sem faixas vazias */
+  .servicos,.depoimentos,.faq,.regioes{padding:64px 0 !important;}
+  .sobre{padding:72px 0 64px !important;}
+  .clientes{padding:44px 0 !important;}
+  .contato{padding:64px 0 120px !important;}
+  .manifesto{min-height:78svh;padding:84px 20px;}
+  .numeros{padding:48px 0 !important;}
+
+  /* serviços: cartões compactos (número no selo, ao lado do título) */
+  .servicos-lista{margin-top:28px !important;border-top:0 !important;display:grid;gap:10px;}
+  .servico{display:grid;grid-template-columns:40px 1fr;column-gap:14px;align-items:center;padding:16px 16px 18px !important;
+    border:1px solid var(--borda) !important;border-radius:20px;background:rgba(255,255,255,.035);}
+  .servico-n{grid-row:1;width:40px;height:40px;border-radius:12px;display:grid !important;place-items:center;font-size:13px !important;
+    color:#fff !important;background:var(--grad);}
+  .servico h3{grid-column:2;margin:0 !important;font-size:18.5px !important;line-height:1.2;}
+  .servico p{grid-column:1 / -1;margin:10px 0 0 !important;font-size:14.5px;line-height:1.55;}
+
+  /* formulário mais curto: campos curtos lado a lado, altura menor */
+  .form{gap:12px;padding:20px !important;border-radius:24px;}
+  .form h3{font-size:22px;}
+  .form-2{grid-template-columns:1fr 1fr !important;gap:10px;}
+  .form input,.form select{padding:12px 14px;}
+  .form textarea{padding:12px 14px;min-height:84px;}
+  .contato-tx > p:not(.rotulo){margin:16px 0 22px;}
+
+  /* topo da abertura: só bandeiras (o @ está no menu e no rodapé) */
+  .heroi-topo .topo-link{display:none;}
+
+  /* rodapé: o logo pequeno repetia o "BRANDING7" gigante */
+  .rodape-in > img{display:none;}
+  .rodape-in{gap:22px;}
+
+  /* página Sobre: valores em cartões de deslizar, cargos sem quebra estranha */
+  .sb-valores{padding:48px 0 !important;}
+  .sb-valores-in{display:flex !important;overflow-x:auto;scroll-snap-type:x mandatory;gap:10px;margin:0 -24px;padding:0 24px 6px;scrollbar-width:none;}
+  .sb-valores-in::-webkit-scrollbar{display:none;}
+  .sb-valores article{flex:0 0 78%;scroll-snap-align:center;padding:22px;}
+  .sb-cargos small{border-radius:10px !important;line-height:1.35;}
+  .sb-equipe{padding:56px 0 !important;}
+  .sb-heroi{padding:48px 0 56px !important;}
+  .sb-nums{margin-top:36px;padding-top:24px;gap:16px 36px;}
+}
+@media (max-width:640px){ .casca-rodape .rodape-in > img{display:block;} }
