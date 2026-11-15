@@ -100,7 +100,7 @@ function CelularPlano({ midias }) {
 
 export default function Celular3D(props) {
   const [plano, setPlano] = useState(false);
-  if (plano) return <CelularPlano midias={props.midias || []} />;
+  if (plano || props.leve) return <CelularPlano midias={props.midias || []} />;
   return <Celular3DReal {...props} falhou={() => setPlano(true)} />;
 }
 

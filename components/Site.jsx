@@ -217,9 +217,8 @@ export default function Site({ lang = 'pt' }) {
     const medir = () => {
       raf = 0;
       const r = sec.getBoundingClientRect(), total = r.height - innerHeight;
-      const cel = matchMedia('(max-width: 640px)').matches;
-      const p = cel ? Math.min(1, Math.max(0, (innerHeight - r.top) / (innerHeight + r.height)))
-                    : Math.min(1, Math.max(0, -r.top / Math.max(1, total)));
+      /* nov/2026: celular também preso na rolagem, igual ao computador */
+      const p = Math.min(1, Math.max(0, -r.top / Math.max(1, total)));
       const pv = p.toFixed(3);
       if (pv !== medir.ult) { medir.ult = pv; sec.style.setProperty('--p', pv); const f = p < .28 ? '0' : '1'; if (sec.dataset.fase !== f) sec.dataset.fase = f; }
     };
@@ -231,6 +230,9 @@ export default function Site({ lang = 'pt' }) {
   /* o 3D (three.js, o arquivo mais pesado) só é baixado quando a seção do
      celular está chegando — não pesa na abertura do site */
   const centroRef = useRef(null);
+  /* celular/tablet: o celular do processo é a versão leve (CSS 3D), sem WebGL */
+  const [toqueLeve, setToqueLeve] = useState(false);
+  useEffect(() => { setToqueLeve(matchMedia('(pointer: coarse)').matches); }, []);
   const [perto3d, setPerto3d] = useState(false);
   useEffect(() => {
     const el = centroRef.current; if (!el || perto3d) return;
@@ -375,10 +377,10 @@ export default function Site({ lang = 'pt' }) {
           <div className="processo-ceu" aria-hidden="true" />
           <p className="rotulo centro">{t.processoRot}</p>
           <h2 className="processo-titulo" aria-label={t.processoAria}>{t.processoT[0]}<br />{t.processoT[1]}<br /><em>{t.processoT[2]}</em></h2>
-          <div className="processo-centro" ref={centroRef}>{perto3d && <Celular3D progresso={progressoProcesso} midias={midiasCelular.filter(m => m.video || m.capa)} />}</div>
+          <div className="processo-centro" ref={centroRef}>{perto3d && <Celular3D leve={toqueLeve} progresso={progressoProcesso} midias={midiasCelular.filter(m => m.video || m.capa)} />}</div>
           <ol className="processo-passos">
             {PASSOS.map(([t, d], k) => (
-              <li key={t} style={{ '--k': k }}><span>{String(k + 1).padStart(2, '0')}</span><b>{t}</b><p>{d}</p></li>
+              <li key={t} style={{ '--k': k }}><span>{String(k + 1).padStart(2, '0')}<i className="pp-total"> / {String(PASSOS.length).padStart(2, '0')}</i></span><b>{t}</b><p>{d}</p></li>
             ))}
           </ol>
           <p className="processo-pe">{t.processoPe}</p>
